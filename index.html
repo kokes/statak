@@ -226,6 +226,21 @@
         cursor: pointer;
       }
 
+      #swap-axes-btn {
+        font: inherit;
+        border-radius: 10px;
+        padding: 0.35rem 0.55rem;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      #swap-axes-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
       #table-container {
         margin-top: 1rem;
         overflow: auto;
@@ -349,6 +364,9 @@
               <select id="row-dimension"></select>
               <label for="column-dimension">Sloupce:</label>
               <select id="column-dimension"></select>
+              <button id="swap-axes-btn" type="button" title="Prohodit řádky a sloupce">
+                Prohodit
+              </button>
             </div>
             <div id="dimension-filters"></div>
           </section>
@@ -398,6 +416,7 @@
       const permalinkBtnEl = document.getElementById("permalink-btn");
       const rowDimensionEl = document.getElementById("row-dimension");
       const columnDimensionEl = document.getElementById("column-dimension");
+      const swapAxesBtnEl = document.getElementById("swap-axes-btn");
       const dimensionFiltersEl = document.getElementById("dimension-filters");
       const chartSectionEl = document.getElementById("chart-section");
       const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
@@ -465,6 +484,19 @@
           hideChart("Graf není k dispozici pro aktuální výběr.");
           return;
         }
+        const isContinuousNumericAxis = (labels, codes) => {
+          const source = Array.isArray(labels) && labels.length ? labels : codes || [];
+          if (!Array.isArray(source) || source.length < 2) return false;
+          const numbers = source.map((value) => parseNumericValue(String(value)));
+          if (numbers.some((n) => n === null)) return false;
+          for (let i = 1; i < numbers.length; i++) {
+            if (numbers[i] < numbers[i - 1]) return false;
+          }
+          return true;
+        };
+        // X osa = řádky tabulky. Line chart dává smysl jen pro spojitou číselnou osu.
+        const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
+        const chartType = xAxisContinuous ? "line" : "bar";
         lastChartData = data;
         chartSectionEl.hidden = false;
         chartNoteEl.textContent =
@@ -487,7 +519,7 @@
           "#f97316"
         ];
         chartInstance = new Chart(lineChartEl.getContext("2d"), {
-          type: "line",
+          type: chartType,
           data: {
             labels: data.labels,
             datasets: filtered.map((dataset, idx) => ({
@@ -495,9 +527,10 @@
               data: dataset.data,
               borderColor: colors[idx % colors.length],
               backgroundColor: colors[idx % colors.length],
-              tension: 0.2,
-              spanGaps: true,
-              pointRadius: 2
+              tension: chartType === "line" ? 0.2 : 0,
+              spanGaps: chartType === "line",
+              pointRadius: chartType === "line" ? 2 : 0,
+              borderWidth: chartType === "bar" ? 1 : 2
             }))
           },
           options: {
@@ -965,6 +998,8 @@
         const rowLabels = getDimensionLabels(dimensions[rowDim]);
         const chartData = {
           labels: [],
+          rowCodes: rowCodes.slice(),
+          colCodes: colCodes.slice(),
           datasets: columnDisplayLabels.map((label) => ({ label, data: [] }))
         };
 
@@ -1072,6 +1107,7 @@
           const fallback = Array.from(rowDimensionEl.options).find((option) => !option.disabled);
           if (fallback) rowDimensionEl.value = fallback.value;
         }
+        swapAxesBtnEl.disabled = !colValue || colValue === "__NONE__";
       }
 
       function applyTableState(tableState) {
@@ -1454,6 +1490,18 @@
 
       permalinkBtnEl.addEventListener("click", () => {
         copyPermalink();
+      });
+
+      swapAxesBtnEl.addEventListener("click", () => {
+        const currentRow = rowDimensionEl.value;
+        const currentCol = columnDimensionEl.value;
+        if (!currentCol || currentCol === "__NONE__") return;
+        rowDimensionEl.value = currentCol;
+        columnDimensionEl.value = currentRow;
+        syncAxisSelectAvailability();
+        syncFiltersWithAxes();
+        renderTable();
+        updatePermalink();
       });
 
       chartZeroAnchorEl.addEventListener("change", () => {
