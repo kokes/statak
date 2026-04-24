@@ -492,6 +492,7 @@
       let initialUrlState = parseUrlState();
       let chartInstance = null;
       let lastChartData = null;
+      let chartSeriesVisibility = {};
 
       function parseNumericValue(value) {
         if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -513,6 +514,7 @@
       }
 
       function hideChart(note) {
+        chartSeriesVisibility = {};
         destroyChart();
         chartSectionEl.hidden = false;
         chartTitleEl.textContent = "Graf";
@@ -608,6 +610,14 @@
               (data.labels[data.rowCodes.findIndex((code) => String(code) === relativeBaseCode)] ||
                 relativeBaseCode)
             : "");
+        if (chartInstance) {
+          const nextVisibility = {};
+          for (let idx = 0; idx < chartInstance.data.datasets.length; idx++) {
+            const ds = chartInstance.data.datasets[idx];
+            nextVisibility[(ds?.label || "") + "::" + idx] = chartInstance.isDatasetVisible(idx);
+          }
+          chartSeriesVisibility = nextVisibility;
+        }
         destroyChart();
         const colors = [
           "#4e79a7",
@@ -646,7 +656,8 @@
               spanGaps: chartType === "line",
               pointRadius: chartType === "line" ? 2 : 0,
               borderWidth: chartType === "bar" ? 1 : 2,
-              fill: chartType === "line" ? isStacked : false
+              fill: chartType === "line" ? isStacked : false,
+              hidden: chartSeriesVisibility[(dataset.label || "") + "::" + idx] === false
             }))
           },
           options: {
@@ -661,10 +672,29 @@
                   const chart = legend.chart;
                   const datasetIndex = legendItem.datasetIndex;
                   if (typeof datasetIndex !== "number") return;
-                  chart.setDatasetVisibility(
-                    datasetIndex,
-                    !chart.isDatasetVisible(datasetIndex)
-                  );
+                  const nativeEvent = event?.native || event;
+                  const isolateOnlyOne = !!(nativeEvent?.metaKey || nativeEvent?.ctrlKey);
+                  if (isolateOnlyOne) {
+                    const visibleIndexes = chart.data.datasets
+                      .map((_, idx) => idx)
+                      .filter((idx) => chart.isDatasetVisible(idx));
+                    const alreadyOnlyThisOne =
+                      visibleIndexes.length === 1 && visibleIndexes[0] === datasetIndex;
+                    if (alreadyOnlyThisOne) {
+                      for (let idx = 0; idx < chart.data.datasets.length; idx++) {
+                        chart.setDatasetVisibility(idx, true);
+                      }
+                    } else {
+                      for (let idx = 0; idx < chart.data.datasets.length; idx++) {
+                        chart.setDatasetVisibility(idx, idx === datasetIndex);
+                      }
+                    }
+                  } else {
+                    chart.setDatasetVisibility(
+                      datasetIndex,
+                      !chart.isDatasetVisible(datasetIndex)
+                    );
+                  }
                   chart.update();
                 }
               },
