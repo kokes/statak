@@ -419,6 +419,7 @@
       const swapAxesBtnEl = document.getElementById("swap-axes-btn");
       const dimensionFiltersEl = document.getElementById("dimension-filters");
       const chartSectionEl = document.getElementById("chart-section");
+      const chartTitleEl = document.getElementById("chart-title");
       const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
       const lineChartEl = document.getElementById("line-chart");
       const chartNoteEl = document.getElementById("chart-note");
@@ -462,6 +463,7 @@
       function hideChart(note) {
         destroyChart();
         chartSectionEl.hidden = true;
+        chartTitleEl.textContent = "Graf";
         chartNoteEl.textContent = note || "";
         lastChartData = null;
       }
@@ -499,6 +501,9 @@
         const chartType = xAxisContinuous ? "line" : "bar";
         lastChartData = data;
         chartSectionEl.hidden = false;
+        chartTitleEl.textContent = data.colDimLabel
+          ? "Graf: " + data.rowDimLabel + " × " + data.colDimLabel
+          : "Graf: " + data.rowDimLabel;
         chartNoteEl.textContent =
           "Body: " +
           data.labels.length +
@@ -591,8 +596,16 @@
         if (currentDataset?.dimensionIds) {
           for (const dimId of currentDataset.dimensionIds) {
             const filterEl = document.getElementById("filter-" + dimId);
-            if (!filterEl || filterEl.disabled || filterEl.value === "__ALL__") continue;
-            filters[dimId] = filterEl.value;
+            if (!filterEl) continue;
+            if (filterEl.multiple) {
+              const selected = getConcreteSelectedCodes(filterEl, dimId);
+              const allCodes = currentDataset.dimensionCodes[dimId] || [];
+              if (!selected.length || selected.length === allCodes.length) continue;
+              filters[dimId] = selected;
+            } else {
+              if (filterEl.value === "__ALL__") continue;
+              filters[dimId] = filterEl.value;
+            }
           }
         }
         return {
@@ -618,6 +631,21 @@
         const next =
           window.location.pathname + (params.toString() ? "?" + params.toString() : "");
         window.history.replaceState(null, "", next);
+      }
+
+      function getConcreteSelectedCodes(selectEl, dimId) {
+        if (!selectEl || !currentDataset) return [];
+        const allowed = new Set(currentDataset.dimensionCodes[dimId] || []);
+        return Array.from(selectEl.selectedOptions || [])
+          .map((option) => option.value)
+          .filter((value) => allowed.has(value));
+      }
+
+      function getAxisCodesFromFilter(dimId) {
+        const allCodes = currentDataset.dimensionCodes[dimId] || [];
+        const filterEl = document.getElementById("filter-" + dimId);
+        const selected = getConcreteSelectedCodes(filterEl, dimId);
+        return selected.length ? selected : allCodes;
       }
 
       async function copyPermalink() {
@@ -950,9 +978,8 @@
 
         if (!rowDim || !codeToPosition[rowDim]) return;
 
-        const rowCodes = currentDataset.dimensionCodes[rowDim] || [];
-        const colCodes =
-          colDim && colDim !== "__NONE__" ? currentDataset.dimensionCodes[colDim] || [] : ["__VALUE__"];
+        const rowCodes = getAxisCodesFromFilter(rowDim);
+        const colCodes = colDim && colDim !== "__NONE__" ? getAxisCodesFromFilter(colDim) : ["__VALUE__"];
         const cellCount = rowCodes.length * colCodes.length;
 
         if (cellCount > MAX_TABLE_CELLS) {
@@ -996,10 +1023,15 @@
         thead.appendChild(headRow);
 
         const rowLabels = getDimensionLabels(dimensions[rowDim]);
+        const rowDimLabel = getDimensionDisplayName(rowDim, dimensionNames);
+        const colDimLabel =
+          colDim && colDim !== "__NONE__" ? getDimensionDisplayName(colDim, dimensionNames) : "";
         const chartData = {
           labels: [],
           rowCodes: rowCodes.slice(),
           colCodes: colCodes.slice(),
+          rowDimLabel,
+          colDimLabel,
           datasets: columnDisplayLabels.map((label) => ({ label, data: [] }))
         };
 
@@ -1073,15 +1105,30 @@
         for (const dimId of currentDataset.dimensionIds) {
           const selectEl = document.getElementById("filter-" + dimId);
           if (!selectEl) continue;
+          const codes = currentDataset.dimensionCodes[dimId] || [];
+          const selectedCodes = getConcreteSelectedCodes(selectEl, dimId);
 
           const isAxis = dimId === rowDim || (colDim !== "__NONE__" && dimId === colDim);
-          selectEl.disabled = isAxis;
-
           if (isAxis) {
-            selectEl.value = "__ALL__";
-          } else if (selectEl.value === "__ALL__") {
-            const firstCode = currentDataset.dimensionCodes[dimId]?.[0] || "";
-            selectEl.value = firstCode;
+            selectEl.disabled = false;
+            selectEl.multiple = true;
+            selectEl.size = Math.min(Math.max(codes.length, 3), 8);
+            const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
+            if (allOption) allOption.selected = false;
+            if (!selectedCodes.length) {
+              for (const option of selectEl.options) {
+                option.selected = codes.includes(option.value);
+              }
+            }
+          } else {
+            selectEl.multiple = false;
+            selectEl.size = 1;
+            if (selectedCodes.length) {
+              selectEl.value = selectedCodes[0];
+            } else if (selectEl.value === "__ALL__") {
+              const firstCode = currentDataset.dimensionCodes[dimId]?.[0] || "";
+              selectEl.value = firstCode;
+            }
           }
         }
       }
@@ -1134,9 +1181,24 @@
           : {};
         for (const [dimId, value] of Object.entries(filters)) {
           const filterEl = document.getElementById("filter-" + dimId);
-          if (!filterEl || filterEl.disabled) continue;
-          const hasOption = Array.from(filterEl.options).some((option) => option.value === value);
-          if (hasOption) filterEl.value = value;
+          if (!filterEl) continue;
+          if (Array.isArray(value) && filterEl.multiple) {
+            const selectedSet = new Set(value.map(String));
+            let selectedCount = 0;
+            for (const option of filterEl.options) {
+              const shouldSelect = selectedSet.has(option.value);
+              option.selected = shouldSelect;
+              if (shouldSelect) selectedCount++;
+            }
+            if (selectedCount === 0) {
+              for (const option of filterEl.options) {
+                if (option.value !== "__ALL__") option.selected = true;
+              }
+            }
+          } else {
+            const hasOption = Array.from(filterEl.options).some((option) => option.value === value);
+            if (hasOption) filterEl.value = value;
+          }
         }
         renderTable();
         suppressUrlUpdate = false;
