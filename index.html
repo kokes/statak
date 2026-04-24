@@ -272,6 +272,15 @@
         margin-right: 0.9rem;
       }
 
+      #chart-options select {
+        border-radius: 10px;
+        padding: 0.25rem 0.45rem;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font: inherit;
+      }
+
       #chart-options label[hidden] {
         display: none !important;
       }
@@ -407,10 +416,17 @@
                 <input id="chart-stacked-bars" type="checkbox" />
                 Skládat série
               </label>
+              <label id="chart-relative-option" for="chart-relative-base" hidden>
+                100 =
+                <select id="chart-relative-base"></select>
+              </label>
             </div>
             <div id="chart-canvas-wrap">
               <canvas id="line-chart"></canvas>
-              <div id="chart-placeholder" hidden>Graf není k dispozici pro aktuální výběr.</div>
+              <div id="chart-placeholder" hidden>
+                Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích
+                nebo sloupcích (např. rok).
+              </div>
             </div>
             <p id="chart-note"></p>
           </section>
@@ -454,6 +470,8 @@
       const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
       const chartStackedOptionEl = document.getElementById("chart-stacked-option");
       const chartStackedBarsEl = document.getElementById("chart-stacked-bars");
+      const chartRelativeOptionEl = document.getElementById("chart-relative-option");
+      const chartRelativeBaseEl = document.getElementById("chart-relative-base");
       const lineChartEl = document.getElementById("line-chart");
       const chartPlaceholderEl = document.getElementById("chart-placeholder");
       const chartNoteEl = document.getElementById("chart-note");
@@ -499,10 +517,13 @@
         chartSectionEl.hidden = false;
         chartTitleEl.textContent = "Graf";
         chartStackedOptionEl.hidden = true;
+        chartRelativeOptionEl.hidden = true;
         chartZeroAnchorEl.disabled = false;
         lineChartEl.hidden = true;
         chartPlaceholderEl.hidden = false;
-        chartPlaceholderEl.textContent = note || "Graf není k dispozici pro aktuální výběr.";
+        chartPlaceholderEl.textContent =
+          note ||
+          "Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích nebo sloupcích (např. rok).";
         chartNoteEl.textContent = "";
         lastChartData = null;
       }
@@ -522,7 +543,9 @@
           .slice(0, maxSeries);
 
         if (!data || !Array.isArray(data.labels) || data.labels.length < 2 || filtered.length === 0) {
-          hideChart("Graf není k dispozici pro aktuální výběr.");
+          hideChart(
+            "Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích nebo sloupcích (např. rok)."
+          );
           return;
         }
         const isContinuousNumericAxis = (labels, codes) => {
@@ -539,6 +562,30 @@
         const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
         const chartType = xAxisContinuous ? "line" : "bar";
         const isStacked = chartStackedBarsEl.checked;
+        const canUseRelativeBase =
+          chartType === "line" && Array.isArray(data.rowCodes) && data.rowCodes.length >= 2;
+        let relativeBaseCode = "__NONE__";
+        if (canUseRelativeBase) {
+          const previous = chartRelativeBaseEl.value || "__NONE__";
+          createSelectOptions(
+            chartRelativeBaseEl,
+            [{ value: "__NONE__", label: "(absolutní hodnoty)" }].concat(
+              data.rowCodes.map((code, idx) => ({
+                value: String(code),
+                label: data.labels[idx] || String(code)
+              }))
+            )
+          );
+          const exists = Array.from(chartRelativeBaseEl.options).some(
+            (option) => option.value === previous
+          );
+          chartRelativeBaseEl.value = exists ? previous : "__NONE__";
+          relativeBaseCode = chartRelativeBaseEl.value;
+          chartRelativeOptionEl.hidden = false;
+        } else {
+          chartRelativeOptionEl.hidden = true;
+          createSelectOptions(chartRelativeBaseEl, []);
+        }
         if (isStacked) chartZeroAnchorEl.checked = true;
         chartZeroAnchorEl.disabled = isStacked;
         const shouldAnchorAtZero = isStacked || chartZeroAnchorEl.checked;
@@ -555,7 +602,12 @@
           data.labels.length +
           ", série: " +
           filtered.length +
-          (data.datasets.length > maxSeries ? " (zobrazeno prvních " + maxSeries + ")" : "");
+          (data.datasets.length > maxSeries ? " (zobrazeno prvních " + maxSeries + ")" : "") +
+          (relativeBaseCode !== "__NONE__"
+            ? ", indexováno: 100 = " +
+              (data.labels[data.rowCodes.findIndex((code) => String(code) === relativeBaseCode)] ||
+                relativeBaseCode)
+            : "");
         destroyChart();
         const colors = [
           "#4e79a7",
@@ -574,8 +626,20 @@
           data: {
             labels: data.labels,
             datasets: filtered.map((dataset, idx) => ({
+              data: (() => {
+                if (relativeBaseCode === "__NONE__") return dataset.data;
+                const baseIdx = data.rowCodes.findIndex(
+                  (code) => String(code) === String(relativeBaseCode)
+                );
+                const baseValue = baseIdx >= 0 ? dataset.data[baseIdx] : null;
+                if (typeof baseValue !== "number" || baseValue === 0) {
+                  return dataset.data.map(() => null);
+                }
+                return dataset.data.map((value) =>
+                  typeof value === "number" ? (value / baseValue) * 100 : null
+                );
+              })(),
               label: dataset.label,
-              data: dataset.data,
               borderColor: colors[idx % colors.length],
               backgroundColor: colors[idx % colors.length],
               tension: chartType === "line" ? 0.2 : 0,
@@ -1637,6 +1701,12 @@
       });
 
       chartStackedBarsEl.addEventListener("change", () => {
+        if (lastChartData) {
+          renderChartData(lastChartData);
+        }
+      });
+
+      chartRelativeBaseEl.addEventListener("change", () => {
         if (lastChartData) {
           renderChartData(lastChartData);
         }
