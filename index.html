@@ -7,11 +7,42 @@
     <style>
       :root {
         color-scheme: light dark;
+        --ui-radius: 12px;
+        --bg-a: #eff6ff;
+        --bg-b: #f0f9ff;
+        --bg-base: #f8fbff;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: #dbe7ff;
+        --accent: #2563eb;
+        --accent-soft: #dbeafe;
+        --surface-soft: #f8fbff;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-a: #111827;
+          --bg-b: #0b1220;
+          --bg-base: #0a0f1a;
+          --card: #0f172a;
+          --text: #e2e8f0;
+          --muted: #94a3b8;
+          --border: #334155;
+          --accent: #60a5fa;
+          --accent-soft: #1e293b;
+          --surface-soft: #111c33;
+        }
       }
 
       body {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         margin: 0;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 500px at 10% -10%, var(--bg-a), transparent),
+          radial-gradient(900px 450px at 110% 10%, var(--bg-b), transparent),
+          var(--bg-base);
       }
 
       #app-shell {
@@ -24,6 +55,14 @@
 
       #app {
         width: min(1100px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow:
+          0 16px 38px rgba(15, 23, 42, 0.14),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        padding: 1.35rem 1.35rem 1.6rem;
+        backdrop-filter: blur(6px);
       }
 
       body.is-centered #app-shell {
@@ -50,10 +89,13 @@
 
       h1 {
         margin-top: 0;
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.2px;
       }
 
       #status {
-        margin: 0.5rem 0 1rem;
+        margin: 0.5rem 0 1.1rem;
+        color: var(--muted);
       }
 
       #dataset-search-row {
@@ -65,23 +107,41 @@
       #dataset-search {
         font: inherit;
         width: 100%;
-        padding: 0.35rem 0.5rem;
+        padding: 0.65rem 0.75rem;
+        border-radius: var(--ui-radius);
+        border: 1px solid var(--border);
+        background: var(--surface-soft);
+        outline: none;
+        transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      }
+
+      #dataset-search:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+        background: var(--card);
       }
 
       #datasets {
-        position: fixed;
-        top: 0;
+        position: absolute;
+        top: calc(100% + 0.25rem);
         left: 0;
-        width: 0;
+        right: 0;
         margin: 0;
         padding: 0.35rem;
         list-style: none;
-        border: 1px solid currentColor;
-        background: Canvas;
+        border: 1px solid var(--border);
+        background: var(--card);
         z-index: 20;
         max-height: min(18rem, 45vh);
         overflow: auto;
         box-sizing: border-box;
+        border-radius: var(--ui-radius);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+      }
+
+      #datasets.open-up {
+        top: auto;
+        bottom: calc(100% + 0.25rem);
       }
 
       #datasets li {
@@ -94,14 +154,15 @@
         text-align: left;
         border: 0;
         background: transparent;
-        padding: 0.45rem 0.55rem;
-        border-radius: 0.4rem;
+        padding: 0.52rem 0.62rem;
+        border-radius: 10px;
         cursor: pointer;
+        transition: background 120ms ease, transform 80ms ease;
       }
 
       button.dataset-btn:hover,
       button.dataset-btn.is-active {
-        background: color-mix(in oklab, CanvasText 14%, Canvas);
+        background: var(--accent-soft);
       }
 
       .dataset-btn-title {
@@ -109,6 +170,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-weight: 600;
       }
 
       .dataset-btn-meta {
@@ -125,8 +187,10 @@
 
       #table-controls {
         margin: 1rem 0;
-        padding: 0.75rem;
-        border: 1px solid currentColor;
+        padding: 0.85rem;
+        border: 1px solid var(--border);
+        border-radius: var(--ui-radius);
+        background: var(--surface-soft);
       }
 
       #table-controls .control-row {
@@ -141,6 +205,27 @@
         font-weight: 600;
       }
 
+      #view-select,
+      #row-dimension,
+      #column-dimension,
+      #dimension-filters select {
+        border-radius: 10px;
+        padding: 0.35rem 0.5rem;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+      }
+
+      #permalink-btn {
+        font: inherit;
+        margin-left: auto;
+        border-radius: 10px;
+        padding: 0.4rem 0.62rem;
+        border: 1px solid var(--border);
+        background: var(--surface-soft);
+        cursor: pointer;
+      }
+
       #table-container {
         margin-top: 1rem;
         overflow: auto;
@@ -151,14 +236,23 @@
         border-collapse: collapse;
         width: max-content;
         min-width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
       }
 
       th,
       td {
-        border: 1px solid currentColor;
-        padding: 0.35rem 0.5rem;
+        border: 1px solid var(--border);
+        padding: 0.42rem 0.56rem;
         text-align: right;
         white-space: nowrap;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: var(--surface-soft);
       }
 
       th:first-child,
@@ -173,7 +267,7 @@
       footer {
         margin-top: 2rem;
         padding-top: 0.9rem;
-        border-top: 1px solid currentColor;
+        border-top: 1px solid var(--border);
         font-size: 0.95rem;
         opacity: 0.9;
       }
@@ -205,6 +299,7 @@
             <div class="control-row">
               <label for="view-select">Sestava:</label>
               <select id="view-select"></select>
+              <button id="permalink-btn" type="button">Kopírovat odkaz</button>
             </div>
             <div class="control-row">
               <label for="row-dimension">Řádky:</label>
@@ -239,12 +334,14 @@
       const datasetTitleEl = document.getElementById("dataset-title");
       const tableControlsEl = document.getElementById("table-controls");
       const viewSelectEl = document.getElementById("view-select");
+      const permalinkBtnEl = document.getElementById("permalink-btn");
       const rowDimensionEl = document.getElementById("row-dimension");
       const columnDimensionEl = document.getElementById("column-dimension");
       const dimensionFiltersEl = document.getElementById("dimension-filters");
       const tableContainerEl = document.getElementById("table-container");
       const tableNoteEl = document.getElementById("table-note");
       const MAX_TABLE_CELLS = 5000;
+      const MAX_FILTER_OPTIONS = 400;
       let currentDataset = null;
       let allDatasets = [];
       let indexedDatasets = [];
@@ -254,10 +351,80 @@
       let currentDatasetViews = [];
       let currentDatasetDetail = null;
       let currentBaseJsonStat = null;
+      let suppressUrlUpdate = false;
+      let initialUrlState = parseUrlState();
 
       function setLayoutForSelection(hasSelection) {
         document.body.classList.toggle("has-selection", hasSelection);
         document.body.classList.toggle("is-centered", !hasSelection);
+      }
+
+      function parseUrlState() {
+        const params = new URLSearchParams(window.location.search);
+        const datasetCode = params.get("d") || "";
+        const datasetVersion = params.get("dv") || "";
+        const source = params.get("s") || "__DATASET__";
+        const row = params.get("r") || "";
+        const col = params.get("c") || "__NONE__";
+        let filters = {};
+        try {
+          const rawFilters = params.get("f");
+          filters = rawFilters ? JSON.parse(rawFilters) : {};
+        } catch {
+          filters = {};
+        }
+        return { datasetCode, datasetVersion, source, row, col, filters };
+      }
+
+      function collectCurrentTableState() {
+        const filters = {};
+        if (currentDataset?.dimensionIds) {
+          for (const dimId of currentDataset.dimensionIds) {
+            const filterEl = document.getElementById("filter-" + dimId);
+            if (!filterEl || filterEl.disabled || filterEl.value === "__ALL__") continue;
+            filters[dimId] = filterEl.value;
+          }
+        }
+        return {
+          datasetCode: currentDatasetInfo?.kod || "",
+          datasetVersion: currentDatasetInfo?.verze || "",
+          source: viewSelectEl.value || "__DATASET__",
+          row: rowDimensionEl.value || "",
+          col: columnDimensionEl.value || "__NONE__",
+          filters
+        };
+      }
+
+      function updatePermalink() {
+        if (suppressUrlUpdate) return;
+        const state = collectCurrentTableState();
+        const params = new URLSearchParams();
+        if (state.datasetCode) params.set("d", state.datasetCode);
+        if (state.datasetVersion) params.set("dv", state.datasetVersion);
+        if (state.source && state.source !== "__DATASET__") params.set("s", state.source);
+        if (state.row) params.set("r", state.row);
+        if (state.col && state.col !== "__NONE__") params.set("c", state.col);
+        if (Object.keys(state.filters).length) params.set("f", JSON.stringify(state.filters));
+        const next =
+          window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+        window.history.replaceState(null, "", next);
+      }
+
+      async function copyPermalink() {
+        updatePermalink();
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          const prev = permalinkBtnEl.textContent;
+          permalinkBtnEl.textContent = "Odkaz zkopírován";
+          setTimeout(() => {
+            permalinkBtnEl.textContent = prev;
+          }, 1200);
+        } catch {
+          permalinkBtnEl.textContent = "Nelze kopírovat";
+          setTimeout(() => {
+            permalinkBtnEl.textContent = "Kopírovat odkaz";
+          }, 1200);
+        }
       }
 
       function getCommonHeaders() {
@@ -265,6 +432,44 @@
           Accept: "application/json",
           "Accept-Language": "cs"
         };
+      }
+
+      function buildDatasetDataUrl(code, version) {
+        const dataUrl = new URL(DOTAZ_BASE + "/data/sady/" + encodeURIComponent(code));
+        dataUrl.searchParams.set("verze", version);
+        dataUrl.searchParams.set("format", "JSON_STAT");
+        dataUrl.searchParams.set("rozsah", "CELY_VYBER");
+        dataUrl.searchParams.set("poznamky", "false");
+        return dataUrl.toString();
+      }
+
+      async function fetchJsonWithTimeout(url, options, timeoutMs, required, label) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, timeoutMs);
+
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+          });
+          if (!response.ok) {
+            if (required) throw new Error(label + " HTTP " + response.status);
+            return null;
+          }
+          return await response.json();
+        } catch (error) {
+          if (required) {
+            if (error?.name === "AbortError") {
+              throw new Error(label + " timeout");
+            }
+            throw error;
+          }
+          return null;
+        } finally {
+          clearTimeout(timeoutId);
+        }
       }
 
       function product(values) {
@@ -376,30 +581,6 @@
           .trim();
       }
 
-      function fuzzyTokenScore(token, target) {
-        if (!token || !target) return -1;
-        const directIndex = target.indexOf(token);
-        if (directIndex >= 0) {
-          return 2000 - directIndex * 2 - Math.max(0, target.length - token.length);
-        }
-
-        let ti = 0;
-        let first = -1;
-        let last = -1;
-        for (let i = 0; i < target.length && ti < token.length; i++) {
-          if (target[i] === token[ti]) {
-            if (first === -1) first = i;
-            last = i;
-            ti++;
-          }
-        }
-        if (ti !== token.length) return -1;
-
-        const span = last - first + 1;
-        const compactnessPenalty = Math.max(0, span - token.length);
-        return 900 - first * 2 - compactnessPenalty;
-      }
-
       function scoreDataset(query, indexedItem) {
         const normalizedQuery = normalizeText(query);
         if (!normalizedQuery) return 0;
@@ -408,12 +589,13 @@
 
         let score = 0;
         for (const token of tokens) {
-          const codeScore = fuzzyTokenScore(token, indexedItem.normCode);
-          const nameScore = fuzzyTokenScore(token, indexedItem.normName);
-          const combinedScore = fuzzyTokenScore(token, indexedItem.normCombined);
-          const best = Math.max(codeScore, nameScore, combinedScore);
-          if (best < 0) return -1;
-          score += best;
+          const idxCode = indexedItem.normCode.indexOf(token);
+          const idxName = indexedItem.normName.indexOf(token);
+          const idxCombined = indexedItem.normCombined.indexOf(token);
+          const matches = [idxCode, idxName, idxCombined].filter((v) => v >= 0);
+          if (!matches.length) return -1;
+          const bestIndex = Math.min(...matches);
+          score += 1200 - bestIndex * 2 - token.length;
         }
 
         if (indexedItem.normCode === normalizedQuery) score += 2000;
@@ -436,18 +618,11 @@
         const maxHeight = Math.min(320, Math.floor(viewportHeight * 0.45));
         const spaceBelow = viewportHeight - rect.bottom - margin;
         const spaceAbove = rect.top - margin;
-
-        listEl.style.maxHeight = Math.max(120, maxHeight) + "px";
-        listEl.style.left = Math.max(margin, Math.round(rect.left)) + "px";
-        listEl.style.width = Math.round(rect.width) + "px";
-
-        if (spaceBelow >= 170 || spaceBelow >= spaceAbove) {
-          listEl.style.top = Math.round(rect.bottom + gap) + "px";
-        } else {
-          const desiredHeight = Math.min(listEl.scrollHeight || maxHeight, maxHeight);
-          const top = Math.max(margin, Math.round(rect.top - desiredHeight - gap));
-          listEl.style.top = top + "px";
-        }
+        const openUp = spaceBelow < 170 && spaceAbove > spaceBelow;
+        const available = openUp ? spaceAbove - gap : spaceBelow - gap;
+        const nextMaxHeight = Math.max(120, Math.min(maxHeight, Math.floor(available)));
+        listEl.style.maxHeight = nextMaxHeight + "px";
+        listEl.classList.toggle("open-up", openUp);
       }
 
       function setActiveDatasetMatch(index) {
@@ -625,7 +800,13 @@
 
               if (dimId === rowDim) code = rowCode;
               else if (colDim !== "__NONE__" && dimId === colDim) code = colCode;
-              else code = selectedFilters[dimId];
+              else {
+                const selected = selectedFilters[dimId];
+                code =
+                  !selected || selected === "__ALL__"
+                    ? currentDataset.dimensionCodes[dimId]?.[0] || ""
+                    : selected;
+              }
 
               const pos = codeToPosition[dimId]?.[code];
               if (typeof pos !== "number") {
@@ -702,6 +883,39 @@
         }
       }
 
+      function applyTableState(tableState) {
+        if (!tableState || !currentDataset) return;
+
+        suppressUrlUpdate = true;
+        if (tableState.row) {
+          const rowOption = Array.from(rowDimensionEl.options).find(
+            (option) => option.value === tableState.row
+          );
+          if (rowOption) rowDimensionEl.value = tableState.row;
+        }
+        if (tableState.col) {
+          const colOption = Array.from(columnDimensionEl.options).find(
+            (option) => option.value === tableState.col
+          );
+          if (colOption) columnDimensionEl.value = tableState.col;
+        }
+        syncAxisSelectAvailability();
+        syncFiltersWithAxes();
+
+        const filters = tableState.filters && typeof tableState.filters === "object"
+          ? tableState.filters
+          : {};
+        for (const [dimId, value] of Object.entries(filters)) {
+          const filterEl = document.getElementById("filter-" + dimId);
+          if (!filterEl || filterEl.disabled) continue;
+          const hasOption = Array.from(filterEl.options).some((option) => option.value === value);
+          if (hasOption) filterEl.value = value;
+        }
+        renderTable();
+        suppressUrlUpdate = false;
+        updatePermalink();
+      }
+
       function setupTableUi(jsonStat, dimensionNames) {
         const dimensionIds = Array.isArray(jsonStat?.id)
           ? jsonStat.id
@@ -765,13 +979,22 @@
           select.id = "filter-" + dimId;
           const labels = getDimensionLabels(dimensions[dimId]);
           const codes = dimensionCodes[dimId] || [];
+          const truncated = codes.length > MAX_FILTER_OPTIONS;
+          const visibleCodes = truncated ? codes.slice(0, MAX_FILTER_OPTIONS) : codes;
           const options = [{ value: "__ALL__", label: "(vše)" }].concat(
-            codes.map((code) => ({
+            visibleCodes.map((code) => ({
               value: code,
               label: buildDisplayLabel(code, labels)
             }))
           );
           createSelectOptions(select, options);
+          if (truncated) {
+            const noteOpt = document.createElement("option");
+            noteOpt.value = "";
+            noteOpt.disabled = true;
+            noteOpt.textContent = "… příliš mnoho položek (" + codes.length + ")";
+            select.appendChild(noteOpt);
+          }
 
           row.appendChild(label);
           row.appendChild(select);
@@ -779,6 +1002,7 @@
 
           select.addEventListener("change", () => {
             renderTable();
+            updatePermalink();
           });
         }
 
@@ -786,17 +1010,20 @@
           syncAxisSelectAvailability();
           syncFiltersWithAxes();
           renderTable();
+          updatePermalink();
         };
 
         columnDimensionEl.onchange = () => {
           syncAxisSelectAvailability();
           syncFiltersWithAxes();
           renderTable();
+          updatePermalink();
         };
 
         tableControlsEl.hidden = false;
         syncFiltersWithAxes();
         renderTable();
+        updatePermalink();
       }
 
       function applySourceData(jsonStat) {
@@ -808,13 +1035,28 @@
         setupTableUi(jsonStat, dimensionNames);
       }
 
-      async function loadSelectedSource() {
+      async function loadSelectedSource(tableState) {
         if (!currentDatasetInfo) return;
         const selectedCode = viewSelectEl.value;
 
         try {
           if (selectedCode === "__DATASET__") {
+            if (!currentBaseJsonStat) {
+              const dataUrl = buildDatasetDataUrl(currentDatasetInfo.kod, currentDatasetInfo.verze);
+              currentBaseJsonStat = await fetchJsonWithTimeout(
+                dataUrl,
+                {
+                  mode: "cors",
+                  headers: getCommonHeaders()
+                },
+                20000,
+                true,
+                "Data"
+              );
+            }
             applySourceData(currentBaseJsonStat);
+            if (tableState) applyTableState(tableState);
+            else updatePermalink();
             return;
           }
 
@@ -830,14 +1072,19 @@
           viewUrl.searchParams.set("rozsah", "CELY_VYBER");
           viewUrl.searchParams.set("poznamky", "false");
 
-          const response = await fetch(viewUrl.toString(), {
-            mode: "cors",
-            headers: getCommonHeaders()
-          });
-          if (!response.ok) throw new Error("View HTTP " + response.status);
-
-          const jsonStat = await response.json();
+          const jsonStat = await fetchJsonWithTimeout(
+            viewUrl.toString(),
+            {
+              mode: "cors",
+              headers: getCommonHeaders()
+            },
+            15000,
+            true,
+            "View"
+          );
           applySourceData(jsonStat);
+          if (tableState) applyTableState(tableState);
+          else updatePermalink();
           statusEl.textContent = "Načteno " + allDatasets.length + " datových sad.";
         } catch (error) {
           statusEl.textContent =
@@ -854,69 +1101,84 @@
         if (!code || !version) return;
 
         statusEl.textContent = "Načítám sadu " + code + "...";
-        tableControlsEl.hidden = true;
-        tableContainerEl.innerHTML = "";
-        tableNoteEl.textContent = "";
-        currentDataset = null;
+        const previousState = {
+          currentDataset,
+          currentDatasetInfo,
+          currentDatasetViews,
+          currentDatasetDetail,
+          currentBaseJsonStat
+        };
         currentDatasetInfo = { kod: code, verze: version, nazev: name };
         currentDatasetViews = [];
         currentDatasetDetail = null;
         currentBaseJsonStat = null;
 
         try {
-          const dataUrl = new URL(DOTAZ_BASE + "/data/sady/" + encodeURIComponent(code));
-          dataUrl.searchParams.set("verze", version);
-          dataUrl.searchParams.set("format", "JSON_STAT");
-          dataUrl.searchParams.set("rozsah", "CELY_VYBER");
-          dataUrl.searchParams.set("poznamky", "false");
-
           const detailUrl = new URL(KATALOG_ENDPOINT + "/" + encodeURIComponent(code));
           detailUrl.searchParams.set("verze", version);
           const viewsUrl = new URL(
             KATALOG_ENDPOINT + "/" + encodeURIComponent(code) + "/vybery"
           );
 
-          const [dataResponse, detailResponse, viewsResponse] = await Promise.all([
-            fetch(dataUrl.toString(), {
+          const detailPromise = fetchJsonWithTimeout(
+            detailUrl.toString(),
+            {
               mode: "cors",
               headers: getCommonHeaders()
-            }),
-            fetch(detailUrl.toString(), {
+            },
+            8000,
+            false,
+            "Detail"
+          );
+          const viewsPromise = fetchJsonWithTimeout(
+            viewsUrl.toString(),
+            {
               mode: "cors",
               headers: getCommonHeaders()
-            }),
-            fetch(viewsUrl.toString(), {
-              mode: "cors",
-              headers: getCommonHeaders()
-            })
-          ]);
+            },
+            8000,
+            false,
+            "Views"
+          );
 
-          if (!dataResponse.ok) throw new Error("Data HTTP " + dataResponse.status);
-          if (!detailResponse.ok) throw new Error("Detail HTTP " + detailResponse.status);
-          if (!viewsResponse.ok) throw new Error("Views HTTP " + viewsResponse.status);
-
-          const [jsonStat, detail, views] = await Promise.all([
-            dataResponse.json(),
-            detailResponse.json(),
-            viewsResponse.json()
+          const [detailMaybe, viewsMaybe] = await Promise.all([
+            detailPromise,
+            viewsPromise
           ]);
+          const detail = detailMaybe || {};
+          const views = Array.isArray(viewsMaybe) ? viewsMaybe : [];
           currentDatasetDetail = detail;
-          currentBaseJsonStat = jsonStat;
-          currentDatasetViews = Array.isArray(views) ? views : [];
+          currentDatasetViews = views;
 
           datasetTitleEl.textContent = name + " (" + code + ")";
           populateViewSelect(currentDatasetViews, "__DATASET__");
-          applySourceData(currentBaseJsonStat);
+          let initialSource = "__DATASET__";
+          if (initialUrlState && initialUrlState.datasetCode === code && initialUrlState.source) {
+            const exists = Array.from(viewSelectEl.options).some(
+              (option) => option.value === initialUrlState.source
+            );
+            initialSource = exists ? initialUrlState.source : "__DATASET__";
+          } else if (currentDatasetViews.length > 0) {
+            initialSource = getViewCode(currentDatasetViews[0]) || "__DATASET__";
+          }
+          viewSelectEl.value = initialSource;
+          await loadSelectedSource();
           setLayoutForSelection(true);
           outputEl.hidden = false;
+          if (initialUrlState && initialUrlState.datasetCode === code) {
+            const state = { ...initialUrlState };
+            initialUrlState = null;
+            applyTableState(state);
+          } else {
+            updatePermalink();
+          }
           statusEl.textContent = "Načteno " + allDatasets.length + " datových sad.";
         } catch (error) {
-          outputEl.hidden = true;
-          tableControlsEl.hidden = true;
-          tableContainerEl.innerHTML = "";
-          tableNoteEl.textContent = "";
-          currentDataset = null;
-          setLayoutForSelection(false);
+          currentDataset = previousState.currentDataset;
+          currentDatasetInfo = previousState.currentDatasetInfo;
+          currentDatasetViews = previousState.currentDatasetViews;
+          currentDatasetDetail = previousState.currentDatasetDetail;
+          currentBaseJsonStat = previousState.currentBaseJsonStat;
           statusEl.textContent =
             "Nepodařilo se načíst sadu " +
             code +
@@ -957,11 +1219,23 @@
           statusEl.textContent =
             "Načteno " +
             items.length +
-            " datových sad. Pište pro fuzzy hledání (bez ohledu na diakritiku).";
+            " datových sad. Pište pro hledání podřetězcem (bez ohledu na diakritiku).";
           searchEl.disabled = false;
           searchEl.value = "";
           hideDatasetDropdown();
           setLayoutForSelection(false);
+          if (initialUrlState && initialUrlState.datasetCode) {
+            const match = items.find((item) => {
+              const sameCode = item?.kod === initialUrlState.datasetCode;
+              const sameVersion =
+                !initialUrlState.datasetVersion || item?.verze === initialUrlState.datasetVersion;
+              return sameCode && sameVersion;
+            });
+            if (match) {
+              await loadDatasetData(match);
+              return;
+            }
+          }
         } catch (error) {
           statusEl.textContent =
             "Nepodařilo se načíst datové sady. " +
@@ -984,6 +1258,10 @@
 
       viewSelectEl.addEventListener("change", () => {
         loadSelectedSource();
+      });
+
+      permalinkBtnEl.addEventListener("click", () => {
+        copyPermalink();
       });
 
       searchEl.addEventListener("keydown", (event) => {
