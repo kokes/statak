@@ -269,6 +269,7 @@
         align-items: center;
         gap: 0.4rem;
         font-size: 0.92rem;
+        margin-right: 0.9rem;
       }
 
       #chart-canvas-wrap {
@@ -377,6 +378,10 @@
                 <input id="chart-zero-anchor" type="checkbox" />
                 Ukotvit osu Y na 0
               </label>
+              <label id="chart-stacked-option" for="chart-stacked-bars" hidden>
+                <input id="chart-stacked-bars" type="checkbox" />
+                Skládané sloupce
+              </label>
             </div>
             <div id="chart-canvas-wrap">
               <canvas id="line-chart"></canvas>
@@ -421,6 +426,8 @@
       const chartSectionEl = document.getElementById("chart-section");
       const chartTitleEl = document.getElementById("chart-title");
       const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
+      const chartStackedOptionEl = document.getElementById("chart-stacked-option");
+      const chartStackedBarsEl = document.getElementById("chart-stacked-bars");
       const lineChartEl = document.getElementById("line-chart");
       const chartNoteEl = document.getElementById("chart-note");
       const tableContainerEl = document.getElementById("table-container");
@@ -464,6 +471,7 @@
         destroyChart();
         chartSectionEl.hidden = true;
         chartTitleEl.textContent = "Graf";
+        chartStackedOptionEl.hidden = true;
         chartNoteEl.textContent = note || "";
         lastChartData = null;
       }
@@ -499,8 +507,10 @@
         // X osa = řádky tabulky. Line chart dává smysl jen pro spojitou číselnou osu.
         const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
         const chartType = xAxisContinuous ? "line" : "bar";
+        const isStackedBar = chartType === "bar" && chartStackedBarsEl.checked;
         lastChartData = data;
         chartSectionEl.hidden = false;
+        chartStackedOptionEl.hidden = chartType !== "bar";
         chartTitleEl.textContent = data.colDimLabel
           ? "Graf: " + data.rowDimLabel + " × " + data.colDimLabel
           : "Graf: " + data.rowDimLabel;
@@ -560,10 +570,14 @@
             },
             scales: {
               y: {
+                stacked: isStackedBar,
                 min: chartZeroAnchorEl.checked ? 0 : undefined,
                 ticks: { callback: (v) => Number(v).toLocaleString("cs-CZ") }
               },
-              x: { ticks: { maxRotation: 45, minRotation: 0 } }
+              x: {
+                stacked: isStackedBar,
+                ticks: { maxRotation: 45, minRotation: 0 }
+              }
             }
           }
         });
@@ -1567,6 +1581,12 @@
       });
 
       chartZeroAnchorEl.addEventListener("change", () => {
+        if (lastChartData) {
+          renderChartData(lastChartData);
+        }
+      });
+
+      chartStackedBarsEl.addEventListener("change", () => {
         if (lastChartData) {
           renderChartData(lastChartData);
         }
