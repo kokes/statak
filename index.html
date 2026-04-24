@@ -1,1821 +1,2023 @@
 <!doctype html>
 <html lang="cs">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Datové sady (v1/sady)</title>
-    <style>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Datové sady (v1/sady)</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ui-radius: 12px;
+      --bg-a: #eff6ff;
+      --bg-b: #f0f9ff;
+      --bg-base: #f8fbff;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #dbe7ff;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --surface-soft: #f8fbff;
+    }
+
+    @media (prefers-color-scheme: dark) {
       :root {
-        color-scheme: light dark;
-        --ui-radius: 12px;
-        --bg-a: #eff6ff;
-        --bg-b: #f0f9ff;
-        --bg-base: #f8fbff;
-        --card: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --border: #dbe7ff;
-        --accent: #2563eb;
-        --accent-soft: #dbeafe;
-        --surface-soft: #f8fbff;
+        --bg-a: #111827;
+        --bg-b: #0b1220;
+        --bg-base: #0a0f1a;
+        --card: #0f172a;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --border: #334155;
+        --accent: #60a5fa;
+        --accent-soft: #1e293b;
+        --surface-soft: #111c33;
       }
+    }
 
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg-a: #111827;
-          --bg-b: #0b1220;
-          --bg-base: #0a0f1a;
-          --card: #0f172a;
-          --text: #e2e8f0;
-          --muted: #94a3b8;
-          --border: #334155;
-          --accent: #60a5fa;
-          --accent-soft: #1e293b;
-          --surface-soft: #111c33;
-        }
-      }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, var(--bg-a), transparent),
+        radial-gradient(900px 450px at 110% 10%, var(--bg-b), transparent),
+        var(--bg-base);
+    }
 
-      body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        margin: 0;
-        color: var(--text);
-        background:
-          radial-gradient(1200px 500px at 10% -10%, var(--bg-a), transparent),
-          radial-gradient(900px 450px at 110% 10%, var(--bg-b), transparent),
-          var(--bg-base);
-      }
+    #app-shell {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
 
-      #app-shell {
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        padding: 2rem;
-        box-sizing: border-box;
-      }
+    #app {
+      width: min(1100px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow:
+        0 16px 38px rgba(15, 23, 42, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      padding: 1.35rem 1.35rem 1.6rem;
+      backdrop-filter: blur(6px);
+    }
 
-      #app {
-        width: min(1100px, 100%);
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        box-shadow:
-          0 16px 38px rgba(15, 23, 42, 0.14),
-          inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        padding: 1.35rem 1.35rem 1.6rem;
-        backdrop-filter: blur(6px);
-      }
+    body.is-centered #app-shell {
+      align-items: center;
+    }
 
-      body.is-centered #app-shell {
-        align-items: center;
-      }
+    body.has-selection #app-shell {
+      align-items: flex-start;
+    }
 
-      body.has-selection #app-shell {
-        align-items: flex-start;
-      }
+    body.is-centered #app {
+      width: min(760px, 100%);
+      margin-top: -6vh;
+    }
 
-      body.is-centered #app {
-        width: min(760px, 100%);
-        margin-top: -6vh;
-      }
+    body.is-centered h1,
+    body.is-centered #status {
+      text-align: center;
+    }
 
-      body.is-centered h1,
-      body.is-centered #status {
-        text-align: center;
-      }
+    body.has-selection #app {
+      margin-top: 0;
+    }
 
-      body.has-selection #app {
-        margin-top: 0;
-      }
+    h1 {
+      margin-top: 0;
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.2px;
+    }
 
-      h1 {
-        margin-top: 0;
-        margin-bottom: 0.25rem;
-        letter-spacing: 0.2px;
-      }
+    #status {
+      margin: 0.5rem 0 1.1rem;
+      color: var(--muted);
+    }
 
-      #status {
-        margin: 0.5rem 0 1.1rem;
-        color: var(--muted);
-      }
+    #dataset-search-row {
+      margin: 0 0 1rem;
+      position: relative;
+      width: min(42rem, 100%);
+    }
 
-      #dataset-search-row {
-        margin: 0 0 1rem;
-        position: relative;
-        width: min(42rem, 100%);
-      }
+    #dataset-search {
+      font: inherit;
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border-radius: var(--ui-radius);
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
 
-      #dataset-search {
-        font: inherit;
-        width: 100%;
-        padding: 0.65rem 0.75rem;
-        border-radius: var(--ui-radius);
-        border: 1px solid var(--border);
-        background: var(--surface-soft);
-        outline: none;
-        transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
-      }
+    #dataset-search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: var(--card);
+    }
 
-      #dataset-search:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-soft);
-        background: var(--card);
-      }
+    #datasets {
+      position: absolute;
+      top: calc(100% + 0.25rem);
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: 0.35rem;
+      list-style: none;
+      border: 1px solid var(--border);
+      background: var(--card);
+      z-index: 20;
+      max-height: min(18rem, 45vh);
+      overflow: auto;
+      box-sizing: border-box;
+      border-radius: var(--ui-radius);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+    }
 
-      #datasets {
-        position: absolute;
-        top: calc(100% + 0.25rem);
-        left: 0;
-        right: 0;
-        margin: 0;
-        padding: 0.35rem;
-        list-style: none;
-        border: 1px solid var(--border);
-        background: var(--card);
-        z-index: 20;
-        max-height: min(18rem, 45vh);
-        overflow: auto;
-        box-sizing: border-box;
-        border-radius: var(--ui-radius);
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
-      }
+    #datasets.open-up {
+      top: auto;
+      bottom: calc(100% + 0.25rem);
+    }
 
-      #datasets.open-up {
-        top: auto;
-        bottom: calc(100% + 0.25rem);
-      }
+    #datasets li {
+      margin: 0;
+    }
 
-      #datasets li {
-        margin: 0;
-      }
+    button.dataset-btn {
+      font: inherit;
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      padding: 0.52rem 0.62rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 120ms ease, transform 80ms ease;
+    }
 
-      button.dataset-btn {
-        font: inherit;
-        width: 100%;
-        text-align: left;
-        border: 0;
-        background: transparent;
-        padding: 0.52rem 0.62rem;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: background 120ms ease, transform 80ms ease;
-      }
+    button.dataset-btn:hover,
+    button.dataset-btn.is-active {
+      background: var(--accent-soft);
+    }
 
-      button.dataset-btn:hover,
-      button.dataset-btn.is-active {
-        background: var(--accent-soft);
-      }
+    .dataset-btn-title {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+    }
 
-      .dataset-btn-title {
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 600;
-      }
+    .dataset-btn-meta {
+      display: block;
+      font-size: 0.85em;
+      opacity: 0.75;
+    }
 
-      .dataset-btn-meta {
-        display: block;
-        font-size: 0.85em;
-        opacity: 0.75;
-      }
+    #dataset-output {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid currentColor;
+    }
 
-      #dataset-output {
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid currentColor;
-      }
+    #table-controls {
+      margin: 1rem 0;
+      padding: 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: var(--ui-radius);
+      background: var(--surface-soft);
+    }
 
-      #table-controls {
-        margin: 1rem 0;
-        padding: 0.85rem;
-        border: 1px solid var(--border);
-        border-radius: var(--ui-radius);
-        background: var(--surface-soft);
-      }
+    #table-controls .control-row {
+      margin: 0.4rem 0;
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-      #table-controls .control-row {
-        margin: 0.4rem 0;
-        display: flex;
-        gap: 0.6rem;
-        align-items: center;
-        flex-wrap: wrap;
-      }
+    #table-controls label {
+      font-weight: 600;
+    }
 
-      #table-controls label {
-        font-weight: 600;
-      }
+    #view-select,
+    #row-dimension,
+    #column-dimension,
+    #dimension-filters select {
+      border-radius: 10px;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+    }
 
-      #view-select,
-      #row-dimension,
-      #column-dimension,
-      #dimension-filters select {
-        border-radius: 10px;
-        padding: 0.35rem 0.5rem;
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text);
-      }
+    #permalink-btn {
+      font: inherit;
+      margin-left: auto;
+      border-radius: 10px;
+      padding: 0.4rem 0.62rem;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      cursor: pointer;
+    }
 
-      #permalink-btn {
-        font: inherit;
-        margin-left: auto;
-        border-radius: 10px;
-        padding: 0.4rem 0.62rem;
-        border: 1px solid var(--border);
-        background: var(--surface-soft);
-        cursor: pointer;
-      }
+    #swap-axes-btn {
+      font: inherit;
+      border-radius: 10px;
+      padding: 0.35rem 0.55rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+    }
 
-      #swap-axes-btn {
-        font: inherit;
-        border-radius: 10px;
-        padding: 0.35rem 0.55rem;
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text);
-        cursor: pointer;
-      }
+    #swap-axes-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
 
-      #swap-axes-btn:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-      }
+    #table-container {
+      margin-top: 1rem;
+      overflow: auto;
+      max-width: 100%;
+    }
 
-      #table-container {
-        margin-top: 1rem;
-        overflow: auto;
-        max-width: 100%;
-      }
+    #chart-section {
+      margin-top: 1rem;
+      padding: 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: var(--ui-radius);
+      background: var(--surface-soft);
+    }
 
-      #chart-section {
-        margin-top: 1rem;
-        padding: 0.85rem;
-        border: 1px solid var(--border);
-        border-radius: var(--ui-radius);
-        background: var(--surface-soft);
-      }
+    #chart-title {
+      margin: 0 0 0.5rem;
+      font-weight: 700;
+    }
 
-      #chart-title {
-        margin: 0 0 0.5rem;
-        font-weight: 700;
-      }
+    #chart-options {
+      margin-bottom: 0.5rem;
+    }
 
-      #chart-options {
-        margin-bottom: 0.5rem;
-      }
+    #chart-options label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.92rem;
+      margin-right: 0.9rem;
+    }
 
-      #chart-options label {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-size: 0.92rem;
-        margin-right: 0.9rem;
-      }
+    #chart-options select {
+      border-radius: 10px;
+      padding: 0.25rem 0.45rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font: inherit;
+    }
 
-      #chart-options select {
-        border-radius: 10px;
-        padding: 0.25rem 0.45rem;
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text);
-        font: inherit;
-      }
+    #chart-options label[hidden] {
+      display: none !important;
+    }
 
-      #chart-options label[hidden] {
-        display: none !important;
-      }
+    #chart-canvas-wrap {
+      position: relative;
+      height: clamp(220px, 38vh, 340px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
 
-      #chart-canvas-wrap {
-        position: relative;
-        height: clamp(220px, 38vh, 340px);
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        overflow: hidden;
-      }
+    #line-chart {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
 
-      #line-chart {
-        width: 100% !important;
-        height: 100% !important;
-        display: block;
-      }
+    #line-chart[hidden] {
+      display: none !important;
+    }
 
-      #line-chart[hidden] {
-        display: none !important;
-      }
+    #chart-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
 
-      #chart-placeholder {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 0.8rem;
-        color: var(--muted);
-        font-weight: 600;
-      }
+    #chart-placeholder[hidden] {
+      display: none !important;
+    }
 
-      #chart-placeholder[hidden] {
-        display: none !important;
-      }
+    #chart-note {
+      margin: 0.45rem 0 0;
+      color: var(--muted);
+    }
 
-      #chart-note {
-        margin: 0.45rem 0 0;
-        color: var(--muted);
-      }
+    table {
+      border-collapse: collapse;
+      width: max-content;
+      min-width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+    }
 
-      table {
-        border-collapse: collapse;
-        width: max-content;
-        min-width: 100%;
-        border-radius: 10px;
-        overflow: hidden;
-      }
+    th,
+    td {
+      border: 1px solid var(--border);
+      padding: 0.42rem 0.56rem;
+      text-align: right;
+      white-space: nowrap;
+    }
 
-      th,
-      td {
-        border: 1px solid var(--border);
-        padding: 0.42rem 0.56rem;
-        text-align: right;
-        white-space: nowrap;
-      }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--surface-soft);
+    }
 
-      th {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        background: var(--surface-soft);
-      }
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
 
-      th:first-child,
-      td:first-child {
-        text-align: left;
-      }
+    #table-note {
+      margin: 0.5rem 0 0;
+    }
 
-      #table-note {
-        margin: 0.5rem 0 0;
-      }
+    footer {
+      margin-top: 2rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
 
-      footer {
-        margin-top: 2rem;
-        padding-top: 0.9rem;
-        border-top: 1px solid var(--border);
-        font-size: 0.95rem;
-        opacity: 0.9;
-      }
+    .disclaimer {
+      font-weight: 700;
+    }
 
-      .disclaimer {
-        font-weight: 700;
-      }
-    </style>
-  </head>
-  <body class="is-centered">
-    <div id="app-shell">
-      <main id="app">
-        <h1>Datové sady z <code>v1/sady</code></h1>
-        <p id="status">Načítám…</p>
-        <div id="dataset-search-row">
-          <label for="dataset-search">Najít datovou sadu (název nebo kód): </label>
-          <input
-            id="dataset-search"
-            type="search"
-            placeholder="Zkuste: hostů, rezidence, CRUHVD1..."
-            autocomplete="off"
-            disabled
-          />
-          <ul id="datasets" hidden></ul>
+    #top-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.6rem;
+    }
+
+    #language-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.12rem;
+      background: var(--surface-soft);
+      gap: 0.15rem;
+    }
+
+    #language-toggle button {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 0.22rem 0.55rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.86rem;
+    }
+
+    #language-toggle button.is-active {
+      background: var(--card);
+      box-shadow: 0 0 0 1px var(--border) inset;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body class="is-centered">
+  <div id="app-shell">
+    <main id="app">
+      <div id="top-bar">
+        <div id="language-toggle" role="group" aria-label="Language">
+          <button id="lang-cs-btn" type="button">CS</button>
+          <button id="lang-en-btn" type="button">EN</button>
         </div>
-        <section id="dataset-output" hidden>
-          <h2 id="dataset-title"></h2>
-          <section id="table-controls" hidden>
-            <div class="control-row">
-              <label for="view-select">Sestava:</label>
-              <select id="view-select"></select>
-              <button id="permalink-btn" type="button">Kopírovat odkaz</button>
-            </div>
-            <div class="control-row">
-              <label for="row-dimension">Řádky:</label>
-              <select id="row-dimension"></select>
-              <label for="column-dimension">Sloupce:</label>
-              <select id="column-dimension"></select>
-              <button id="swap-axes-btn" type="button" title="Prohodit řádky a sloupce">
-                Prohodit
-              </button>
-            </div>
-            <div id="dimension-filters"></div>
-          </section>
-          <section id="chart-section" hidden>
-            <p id="chart-title">Graf</p>
-            <div id="chart-options">
-              <label for="chart-zero-anchor">
-                <input id="chart-zero-anchor" type="checkbox" />
-                Ukotvit osu Y na 0
-              </label>
-              <label id="chart-stacked-option" for="chart-stacked-bars" hidden>
-                <input id="chart-stacked-bars" type="checkbox" />
-                Skládat série
-              </label>
-              <label id="chart-relative-option" for="chart-relative-base" hidden>
-                100 =
-                <select id="chart-relative-base"></select>
-              </label>
-            </div>
-            <div id="chart-canvas-wrap">
-              <canvas id="line-chart"></canvas>
-              <div id="chart-placeholder" hidden>
-                Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích
-                nebo sloupcích (např. rok).
-              </div>
-            </div>
-            <p id="chart-note"></p>
-          </section>
-          <div id="table-container"></div>
-          <p id="table-note"></p>
+      </div>
+      <h1><span id="app-title-prefix">Datové sady z</span> <code>v1/sady</code></h1>
+      <p id="status">Načítám…</p>
+      <div id="dataset-search-row">
+        <label id="dataset-search-label" for="dataset-search">Najít datovou sadu (název nebo kód): </label>
+        <input id="dataset-search" type="search" placeholder="Zkuste: hostů, rezidence, CRUHVD1..." autocomplete="off"
+          disabled />
+        <ul id="datasets" hidden></ul>
+      </div>
+      <section id="dataset-output" hidden>
+        <h2 id="dataset-title"></h2>
+        <section id="table-controls" hidden>
+          <div class="control-row">
+            <label id="view-select-label" for="view-select">Sestava:</label>
+            <select id="view-select"></select>
+            <button id="permalink-btn" type="button">Kopírovat odkaz</button>
+          </div>
+          <div class="control-row">
+            <label id="row-dimension-label" for="row-dimension">Řádky:</label>
+            <select id="row-dimension"></select>
+            <label id="column-dimension-label" for="column-dimension">Sloupce:</label>
+            <select id="column-dimension"></select>
+            <button id="swap-axes-btn" type="button" title="Prohodit řádky a sloupce">
+              Prohodit
+            </button>
+          </div>
+          <div id="dimension-filters"></div>
         </section>
-        <footer>
-          <p>
-            Zdroj dat: <a href="https://data.csu.gov.cz" target="_blank" rel="noopener noreferrer">DataStat (ČSÚ)</a>.
-          </p>
-          <p class="disclaimer">
-            Neoficiální ukázková aplikace. Bez afiliace, partnerství nebo schválení ze strany ČSÚ.
-          </p>
-        </footer>
-      </main>
-    </div>
+        <section id="chart-section" hidden>
+          <p id="chart-title">Graf</p>
+          <div id="chart-options">
+            <label for="chart-zero-anchor">
+              <input id="chart-zero-anchor" type="checkbox" />
+              <span id="chart-zero-anchor-label">Ukotvit osu Y na 0</span>
+            </label>
+            <label id="chart-stacked-option" for="chart-stacked-bars" hidden>
+              <input id="chart-stacked-bars" type="checkbox" />
+              <span id="chart-stacked-bars-label">Skládat série</span>
+            </label>
+            <label id="chart-relative-option" for="chart-relative-base" hidden>
+              100 =
+              <select id="chart-relative-base"></select>
+            </label>
+          </div>
+          <div id="chart-canvas-wrap">
+            <canvas id="line-chart"></canvas>
+            <div id="chart-placeholder" hidden>
+              Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích
+              nebo sloupcích (např. rok).
+            </div>
+          </div>
+          <p id="chart-note"></p>
+        </section>
+        <div id="table-container"></div>
+        <p id="table-note"></p>
+      </section>
+      <footer>
+        <p>
+            <span id="footer-source-label">Zdroj dat:</span> <a href="https://data.csu.gov.cz" target="_blank"
+              rel="noopener noreferrer">DataStat (ČSÚ)</a>.
+        </p>
+          <p id="footer-disclaimer" class="disclaimer">
+          Neoficiální ukázková aplikace. Bez afiliace, partnerství nebo schválení ze strany ČSÚ.
+        </p>
+      </footer>
+    </main>
+  </div>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
-      integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
-      crossorigin="anonymous"
-    ></script>
-    <script>
-      const KATALOG_ENDPOINT = "https://data.csu.gov.cz/api/katalog/v1/sady";
-      const DOTAZ_BASE = "https://data.csu.gov.cz/api/dotaz/v1";
-      const MAX_SEARCH_RESULTS = 40;
-      const statusEl = document.getElementById("status");
-      const searchEl = document.getElementById("dataset-search");
-      const listEl = document.getElementById("datasets");
-      const outputEl = document.getElementById("dataset-output");
-      const datasetTitleEl = document.getElementById("dataset-title");
-      const tableControlsEl = document.getElementById("table-controls");
-      const viewSelectEl = document.getElementById("view-select");
-      const permalinkBtnEl = document.getElementById("permalink-btn");
-      const rowDimensionEl = document.getElementById("row-dimension");
-      const columnDimensionEl = document.getElementById("column-dimension");
-      const swapAxesBtnEl = document.getElementById("swap-axes-btn");
-      const dimensionFiltersEl = document.getElementById("dimension-filters");
-      const chartSectionEl = document.getElementById("chart-section");
-      const chartTitleEl = document.getElementById("chart-title");
-      const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
-      const chartStackedOptionEl = document.getElementById("chart-stacked-option");
-      const chartStackedBarsEl = document.getElementById("chart-stacked-bars");
-      const chartRelativeOptionEl = document.getElementById("chart-relative-option");
-      const chartRelativeBaseEl = document.getElementById("chart-relative-base");
-      const lineChartEl = document.getElementById("line-chart");
-      const chartPlaceholderEl = document.getElementById("chart-placeholder");
-      const chartNoteEl = document.getElementById("chart-note");
-      const tableContainerEl = document.getElementById("table-container");
-      const tableNoteEl = document.getElementById("table-note");
-      const MAX_TABLE_CELLS = 5000;
-      const MAX_FILTER_OPTIONS = 400;
-      let currentDataset = null;
-      let allDatasets = [];
-      let indexedDatasets = [];
-      let filteredDatasetMatches = [];
-      let activeDatasetMatchIndex = -1;
-      let currentDatasetInfo = null;
-      let currentDatasetViews = [];
-      let currentDatasetDetail = null;
-      let currentBaseJsonStat = null;
-      let suppressUrlUpdate = false;
-      let initialUrlState = parseUrlState();
-      let chartInstance = null;
-      let lastChartData = null;
-      let chartSeriesVisibility = {};
-
-      function parseNumericValue(value) {
-        if (typeof value === "number" && Number.isFinite(value)) return value;
-        if (typeof value !== "string") return null;
-        const normalized = value
-          .trim()
-          .replaceAll("\u00a0", "")
-          .replaceAll(" ", "")
-          .replace(",", ".");
-        const num = Number(normalized);
-        return Number.isFinite(num) ? num : null;
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+    integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+    crossorigin="anonymous"></script>
+  <script>
+    const KATALOG_ENDPOINT = "https://data.csu.gov.cz/api/katalog/v1/sady";
+    const DOTAZ_BASE = "https://data.csu.gov.cz/api/dotaz/v1";
+    const MAX_SEARCH_RESULTS = 40;
+    const LANG_STORAGE_KEY = "statak.lang";
+    const I18N = {
+      cs: {
+        appTitlePrefix: "Datové sady z",
+        statusLoading: "Načítám…",
+        searchLabel: "Najít datovou sadu (název nebo kód):",
+        searchPlaceholder: "Zkuste: hostů, rezidence, CRUHVD1...",
+        labelView: "Sestava:",
+        labelRows: "Řádky:",
+        labelCols: "Sloupce:",
+        swap: "Prohodit",
+        swapTitle: "Prohodit řádky a sloupce",
+        permalink: "Kopírovat odkaz",
+        copied: "Odkaz zkopírován",
+        cannotCopy: "Nelze kopírovat",
+        chart: "Graf",
+        chartZero: "Ukotvit osu Y na 0",
+        chartStack: "Skládat série",
+        chartNoData:
+          "Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích nebo sloupcích (např. rok).",
+        chartJsMissing: "Chart.js není načten.",
+        chartDisabledLarge: "Graf je vypnut kvůli velikosti tabulky.",
+        chartPointsSeries: "Body: {points}, série: {series}{extra}",
+        chartIndexed: ", indexováno: 100 = {base}",
+        chartShownFirst: " (zobrazeno prvních {max})",
+        chartAbs: "(absolutní hodnoty)",
+        chartTitleOne: "Graf: {row}",
+        chartTitleTwo: "Graf: {row} × {col}",
+        footerSource: "Zdroj dat:",
+        footerDisclaimer:
+          "Neoficiální ukázková aplikace. Bez afiliace, partnerství nebo schválení ze strany ČSÚ.",
+        unnamedView: "(nepojmenovaný výběr)",
+        fullDataset: "Celá sada",
+        unnamedDataset: "(nepojmenovaná datová sada)",
+        noDatasetMatches: "Nenalezeny žádné odpovídající datové sady.",
+        tableTooLarge:
+          "Tabulka je příliš velká ({cells} buněk). Vyberte dimenze s menším počtem hodnot nebo upravte filtry.",
+        noColumn: "(žádný sloupec)",
+        all: "(vše)",
+        tooManyItems: "… příliš mnoho položek ({count})",
+        loadingSelection: "Načítám výběr {code}...",
+        loadedDatasets: "Načteno {count} datových sad.",
+        failedLoadSelection: "Nepodařilo se načíst výběr. {error}",
+        loadingDataset: "Načítám sadu {code}...",
+        failedLoadDataset: "Nepodařilo se načíst sadu {code}. {error}",
+        loadedDatasetsHint:
+          "Načteno {count} datových sad. Pište pro hledání podřetězcem (bez ohledu na diakritiku).",
+        failedLoadDatasets: "Nepodařilo se načíst datové sady. {error}",
+        versionShort: "v"
+      },
+      en: {
+        appTitlePrefix: "Datasets from",
+        statusLoading: "Loading…",
+        searchLabel: "Find dataset (name or code):",
+        searchPlaceholder: "Try: guests, residence, CRUHVD1...",
+        labelView: "View:",
+        labelRows: "Rows:",
+        labelCols: "Columns:",
+        swap: "Swap",
+        swapTitle: "Swap rows and columns",
+        permalink: "Copy link",
+        copied: "Link copied",
+        cannotCopy: "Cannot copy",
+        chart: "Chart",
+        chartZero: "Anchor Y axis at 0",
+        chartStack: "Stack series",
+        chartNoData:
+          "Chart is not available for the current selection. Try a numeric axis in rows or columns (e.g. year).",
+        chartJsMissing: "Chart.js is not loaded.",
+        chartDisabledLarge: "Chart is disabled because the table is too large.",
+        chartPointsSeries: "Points: {points}, series: {series}{extra}",
+        chartIndexed: ", indexed: 100 = {base}",
+        chartShownFirst: " (showing first {max})",
+        chartAbs: "(absolute values)",
+        chartTitleOne: "Chart: {row}",
+        chartTitleTwo: "Chart: {row} × {col}",
+        footerSource: "Data source:",
+        footerDisclaimer:
+          "Unofficial demo app. No affiliation, partnership or endorsement by CZSO.",
+        unnamedView: "(unnamed view)",
+        fullDataset: "Full dataset",
+        unnamedDataset: "(unnamed dataset)",
+        noDatasetMatches: "No matching datasets found.",
+        tableTooLarge:
+          "Table is too large ({cells} cells). Choose dimensions with fewer values or adjust filters.",
+        noColumn: "(no column)",
+        all: "(all)",
+        tooManyItems: "… too many items ({count})",
+        loadingSelection: "Loading selection {code}...",
+        loadedDatasets: "Loaded {count} datasets.",
+        failedLoadSelection: "Failed to load selection. {error}",
+        loadingDataset: "Loading dataset {code}...",
+        failedLoadDataset: "Failed to load dataset {code}. {error}",
+        loadedDatasetsHint:
+          "Loaded {count} datasets. Type to search by substring (accent-insensitive).",
+        failedLoadDatasets: "Failed to load datasets. {error}",
+        versionShort: "v"
       }
+    };
 
-      function destroyChart() {
-        if (chartInstance) {
-          chartInstance.destroy();
-          chartInstance = null;
+    function detectInitialLang() {
+      try {
+        const stored = localStorage.getItem(LANG_STORAGE_KEY);
+        if (stored === "cs" || stored === "en") return stored;
+      } catch {}
+      const nav = (navigator.languages?.[0] || navigator.language || "en").toLowerCase();
+      return nav.startsWith("cs") || nav.startsWith("sk") ? "cs" : "en";
+    }
+    const statusEl = document.getElementById("status");
+    const appTitlePrefixEl = document.getElementById("app-title-prefix");
+    const datasetSearchLabelEl = document.getElementById("dataset-search-label");
+    const viewSelectLabelEl = document.getElementById("view-select-label");
+    const rowDimensionLabelEl = document.getElementById("row-dimension-label");
+    const columnDimensionLabelEl = document.getElementById("column-dimension-label");
+    const langCsBtnEl = document.getElementById("lang-cs-btn");
+    const langEnBtnEl = document.getElementById("lang-en-btn");
+    const searchEl = document.getElementById("dataset-search");
+    const listEl = document.getElementById("datasets");
+    const outputEl = document.getElementById("dataset-output");
+    const datasetTitleEl = document.getElementById("dataset-title");
+    const tableControlsEl = document.getElementById("table-controls");
+    const viewSelectEl = document.getElementById("view-select");
+    const permalinkBtnEl = document.getElementById("permalink-btn");
+    const rowDimensionEl = document.getElementById("row-dimension");
+    const columnDimensionEl = document.getElementById("column-dimension");
+    const swapAxesBtnEl = document.getElementById("swap-axes-btn");
+    const dimensionFiltersEl = document.getElementById("dimension-filters");
+    const chartSectionEl = document.getElementById("chart-section");
+    const chartTitleEl = document.getElementById("chart-title");
+    const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
+    const chartZeroAnchorLabelEl = document.getElementById("chart-zero-anchor-label");
+    const chartStackedOptionEl = document.getElementById("chart-stacked-option");
+    const chartStackedBarsEl = document.getElementById("chart-stacked-bars");
+    const chartStackedBarsLabelEl = document.getElementById("chart-stacked-bars-label");
+    const chartRelativeOptionEl = document.getElementById("chart-relative-option");
+    const chartRelativeBaseEl = document.getElementById("chart-relative-base");
+    const lineChartEl = document.getElementById("line-chart");
+    const chartPlaceholderEl = document.getElementById("chart-placeholder");
+    const chartNoteEl = document.getElementById("chart-note");
+    const footerSourceLabelEl = document.getElementById("footer-source-label");
+    const footerDisclaimerEl = document.getElementById("footer-disclaimer");
+    const tableContainerEl = document.getElementById("table-container");
+    const tableNoteEl = document.getElementById("table-note");
+    const MAX_TABLE_CELLS = 5000;
+    const MAX_FILTER_OPTIONS = 400;
+    let currentDataset = null;
+    let allDatasets = [];
+    let indexedDatasets = [];
+    let filteredDatasetMatches = [];
+    let activeDatasetMatchIndex = -1;
+    let currentDatasetInfo = null;
+    let currentDatasetViews = [];
+    let currentDatasetDetail = null;
+    let currentBaseJsonStat = null;
+    let suppressUrlUpdate = false;
+    let initialUrlState = parseUrlState();
+    let chartInstance = null;
+    let lastChartData = null;
+    let chartSeriesVisibility = {};
+    let currentLang = detectInitialLang();
+
+    function t(key, vars) {
+      const dict = I18N[currentLang] || I18N.cs;
+      let out = dict[key] ?? key;
+      if (vars && typeof vars === "object") {
+        for (const [name, value] of Object.entries(vars)) {
+          out = out.replaceAll("{" + name + "}", String(value));
         }
       }
+      return out;
+    }
 
-      function hideChart(note) {
-        chartSeriesVisibility = {};
-        destroyChart();
-        chartSectionEl.hidden = false;
-        chartTitleEl.textContent = "Graf";
-        chartStackedOptionEl.hidden = true;
-        chartRelativeOptionEl.hidden = true;
-        chartZeroAnchorEl.disabled = false;
-        lineChartEl.hidden = true;
-        chartPlaceholderEl.hidden = false;
-        chartPlaceholderEl.textContent =
-          note ||
-          "Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích nebo sloupcích (např. rok).";
-        chartNoteEl.textContent = "";
-        lastChartData = null;
+    function applyLanguageUi() {
+      document.documentElement.lang = currentLang === "cs" ? "cs" : "en";
+      appTitlePrefixEl.textContent = t("appTitlePrefix");
+      statusEl.textContent = t("statusLoading");
+      datasetSearchLabelEl.textContent = t("searchLabel");
+      searchEl.placeholder = t("searchPlaceholder");
+      viewSelectLabelEl.textContent = t("labelView");
+      rowDimensionLabelEl.textContent = t("labelRows");
+      columnDimensionLabelEl.textContent = t("labelCols");
+      permalinkBtnEl.textContent = t("permalink");
+      swapAxesBtnEl.textContent = t("swap");
+      swapAxesBtnEl.title = t("swapTitle");
+      chartTitleEl.textContent = t("chart");
+      chartZeroAnchorLabelEl.textContent = t("chartZero");
+      chartStackedBarsLabelEl.textContent = t("chartStack");
+      chartPlaceholderEl.textContent = t("chartNoData");
+      footerSourceLabelEl.textContent = t("footerSource");
+      footerDisclaimerEl.textContent = t("footerDisclaimer");
+      langCsBtnEl.classList.toggle("is-active", currentLang === "cs");
+      langEnBtnEl.classList.toggle("is-active", currentLang === "en");
+      langCsBtnEl.setAttribute("aria-pressed", currentLang === "cs" ? "true" : "false");
+      langEnBtnEl.setAttribute("aria-pressed", currentLang === "en" ? "true" : "false");
+    }
+
+    function setLanguage(nextLang) {
+      if (nextLang !== "cs" && nextLang !== "en") return;
+      if (nextLang === currentLang) return;
+      currentLang = nextLang;
+      try {
+        localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+      } catch {}
+      window.location.reload();
+    }
+
+    function parseNumericValue(value) {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value !== "string") return null;
+      const normalized = value
+        .trim()
+        .replaceAll("\u00a0", "")
+        .replaceAll(" ", "")
+        .replace(",", ".");
+      const num = Number(normalized);
+      return Number.isFinite(num) ? num : null;
+    }
+
+    function destroyChart() {
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
       }
+    }
 
-      function renderChartData(data) {
-        if (!window.Chart) {
-          hideChart("Chart.js není načten.");
-          return;
-        }
-        const maxSeries = 10;
-        const filtered = (data?.datasets || [])
-          .map((dataset) => ({
-            ...dataset,
-            numericCount: dataset.data.filter((value) => typeof value === "number").length
-          }))
-          .filter((dataset) => dataset.numericCount >= 2)
-          .slice(0, maxSeries);
+    function hideChart(note) {
+      chartSeriesVisibility = {};
+      destroyChart();
+      chartSectionEl.hidden = false;
+      chartTitleEl.textContent = t("chart");
+      chartStackedOptionEl.hidden = true;
+      chartRelativeOptionEl.hidden = true;
+      chartZeroAnchorEl.disabled = false;
+      lineChartEl.hidden = true;
+      chartPlaceholderEl.hidden = false;
+      chartPlaceholderEl.textContent = note || t("chartNoData");
+      chartNoteEl.textContent = "";
+      lastChartData = null;
+    }
 
-        if (!data || !Array.isArray(data.labels) || data.labels.length < 2 || filtered.length === 0) {
-          hideChart(
-            "Graf není k dispozici pro aktuální výběr. Zkuste vybrat číselnou osu v řádcích nebo sloupcích (např. rok)."
-          );
-          return;
+    function renderChartData(data) {
+      if (!window.Chart) {
+        hideChart(t("chartJsMissing"));
+        return;
+      }
+      const maxSeries = 10;
+      const filtered = (data?.datasets || [])
+        .map((dataset) => ({
+          ...dataset,
+          numericCount: dataset.data.filter((value) => typeof value === "number").length
+        }))
+        .filter((dataset) => dataset.numericCount >= 2)
+        .slice(0, maxSeries);
+
+      if (!data || !Array.isArray(data.labels) || data.labels.length < 2 || filtered.length === 0) {
+        hideChart(t("chartNoData"));
+        return;
+      }
+      const isContinuousNumericAxis = (labels, codes) => {
+        const source = Array.isArray(labels) && labels.length ? labels : codes || [];
+        if (!Array.isArray(source) || source.length < 2) return false;
+        const numbers = source.map((value) => parseNumericValue(String(value)));
+        if (numbers.some((n) => n === null)) return false;
+        for (let i = 1; i < numbers.length; i++) {
+          if (numbers[i] < numbers[i - 1]) return false;
         }
-        const isContinuousNumericAxis = (labels, codes) => {
-          const source = Array.isArray(labels) && labels.length ? labels : codes || [];
-          if (!Array.isArray(source) || source.length < 2) return false;
-          const numbers = source.map((value) => parseNumericValue(String(value)));
-          if (numbers.some((n) => n === null)) return false;
-          for (let i = 1; i < numbers.length; i++) {
-            if (numbers[i] < numbers[i - 1]) return false;
-          }
-          return true;
-        };
-        // X osa = řádky tabulky. Line chart dává smysl jen pro spojitou číselnou osu.
-        const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
-        const chartType = xAxisContinuous ? "line" : "bar";
-        const isStacked = chartStackedBarsEl.checked;
-        const canUseRelativeBase =
-          chartType === "line" && Array.isArray(data.rowCodes) && data.rowCodes.length >= 2;
-        let relativeBaseCode = "__NONE__";
-        if (canUseRelativeBase) {
-          const previous = chartRelativeBaseEl.value || "__NONE__";
-          createSelectOptions(
-            chartRelativeBaseEl,
-            [{ value: "__NONE__", label: "(absolutní hodnoty)" }].concat(
-              data.rowCodes.map((code, idx) => ({
-                value: String(code),
-                label: data.labels[idx] || String(code)
-              }))
-            )
-          );
-          const exists = Array.from(chartRelativeBaseEl.options).some(
-            (option) => option.value === previous
-          );
-          chartRelativeBaseEl.value = exists ? previous : "__NONE__";
-          relativeBaseCode = chartRelativeBaseEl.value;
-          chartRelativeOptionEl.hidden = false;
-        } else {
-          chartRelativeOptionEl.hidden = true;
-          createSelectOptions(chartRelativeBaseEl, []);
-        }
-        if (isStacked) chartZeroAnchorEl.checked = true;
-        chartZeroAnchorEl.disabled = isStacked;
-        const shouldAnchorAtZero = isStacked || chartZeroAnchorEl.checked;
-        lastChartData = data;
-        chartSectionEl.hidden = false;
-        lineChartEl.hidden = false;
-        chartPlaceholderEl.hidden = true;
-        chartStackedOptionEl.hidden = chartType !== "bar" && chartType !== "line";
-        chartTitleEl.textContent = data.colDimLabel
-          ? "Graf: " + data.rowDimLabel + " × " + data.colDimLabel
-          : "Graf: " + data.rowDimLabel;
-        chartNoteEl.textContent =
-          "Body: " +
-          data.labels.length +
-          ", série: " +
-          filtered.length +
-          (data.datasets.length > maxSeries ? " (zobrazeno prvních " + maxSeries + ")" : "") +
-          (relativeBaseCode !== "__NONE__"
-            ? ", indexováno: 100 = " +
-              (data.labels[data.rowCodes.findIndex((code) => String(code) === relativeBaseCode)] ||
-                relativeBaseCode)
-            : "");
-        if (chartInstance) {
-          const nextVisibility = {};
-          for (let idx = 0; idx < chartInstance.data.datasets.length; idx++) {
-            const ds = chartInstance.data.datasets[idx];
-            nextVisibility[(ds?.label || "") + "::" + idx] = chartInstance.isDatasetVisible(idx);
-          }
-          chartSeriesVisibility = nextVisibility;
-        }
-        destroyChart();
-        const colors = [
-          "#4e79a7",
-          "#f28e2b",
-          "#59a14f",
-          "#e15759",
-          "#76b7b2",
-          "#edc948",
-          "#b07aa1",
-          "#ff9da7",
-          "#9c755f",
-          "#bab0ab"
-        ];
-        chartInstance = new Chart(lineChartEl.getContext("2d"), {
-          type: chartType,
-          data: {
-            labels: data.labels,
-            datasets: filtered.map((dataset, idx) => ({
-              data: (() => {
-                if (relativeBaseCode === "__NONE__") return dataset.data;
-                const baseIdx = data.rowCodes.findIndex(
-                  (code) => String(code) === String(relativeBaseCode)
-                );
-                const baseValue = baseIdx >= 0 ? dataset.data[baseIdx] : null;
-                if (typeof baseValue !== "number" || baseValue === 0) {
-                  return dataset.data.map(() => null);
-                }
-                return dataset.data.map((value) =>
-                  typeof value === "number" ? (value / baseValue) * 100 : null
-                );
-              })(),
-              label: dataset.label,
-              borderColor: colors[idx % colors.length],
-              backgroundColor: colors[idx % colors.length],
-              tension: chartType === "line" ? 0.2 : 0,
-              spanGaps: chartType === "line",
-              pointRadius: chartType === "line" ? 2 : 0,
-              borderWidth: chartType === "bar" ? 1 : 2,
-              fill: chartType === "line" ? isStacked : false,
-              hidden: chartSeriesVisibility[(dataset.label || "") + "::" + idx] === false
+        return true;
+      };
+      // X osa = řádky tabulky. Line chart dává smysl jen pro spojitou číselnou osu.
+      const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
+      const chartType = xAxisContinuous ? "line" : "bar";
+      const isStacked = chartStackedBarsEl.checked;
+      const canUseRelativeBase =
+        chartType === "line" && Array.isArray(data.rowCodes) && data.rowCodes.length >= 2;
+      let relativeBaseCode = "__NONE__";
+      if (canUseRelativeBase) {
+        const previous = chartRelativeBaseEl.value || "__NONE__";
+        createSelectOptions(
+          chartRelativeBaseEl,
+          [{ value: "__NONE__", label: t("chartAbs") }].concat(
+            data.rowCodes.map((code, idx) => ({
+              value: String(code),
+              label: data.labels[idx] || String(code)
             }))
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: "index", intersect: false },
-            plugins: {
-              legend: {
-                display: true,
-                position: "bottom",
-                onClick(event, legendItem, legend) {
-                  const chart = legend.chart;
-                  const datasetIndex = legendItem.datasetIndex;
-                  if (typeof datasetIndex !== "number") return;
-                  const nativeEvent = event?.native || event;
-                  const isolateOnlyOne = !!(nativeEvent?.metaKey || nativeEvent?.ctrlKey);
-                  if (isolateOnlyOne) {
-                    const visibleIndexes = chart.data.datasets
-                      .map((_, idx) => idx)
-                      .filter((idx) => chart.isDatasetVisible(idx));
-                    const alreadyOnlyThisOne =
-                      visibleIndexes.length === 1 && visibleIndexes[0] === datasetIndex;
-                    if (alreadyOnlyThisOne) {
-                      for (let idx = 0; idx < chart.data.datasets.length; idx++) {
-                        chart.setDatasetVisibility(idx, true);
-                      }
-                    } else {
-                      for (let idx = 0; idx < chart.data.datasets.length; idx++) {
-                        chart.setDatasetVisibility(idx, idx === datasetIndex);
-                      }
+          )
+        );
+        const exists = Array.from(chartRelativeBaseEl.options).some(
+          (option) => option.value === previous
+        );
+        chartRelativeBaseEl.value = exists ? previous : "__NONE__";
+        relativeBaseCode = chartRelativeBaseEl.value;
+        chartRelativeOptionEl.hidden = false;
+      } else {
+        chartRelativeOptionEl.hidden = true;
+        createSelectOptions(chartRelativeBaseEl, []);
+      }
+      if (isStacked) chartZeroAnchorEl.checked = true;
+      chartZeroAnchorEl.disabled = isStacked;
+      const shouldAnchorAtZero = isStacked || chartZeroAnchorEl.checked;
+      lastChartData = data;
+      chartSectionEl.hidden = false;
+      lineChartEl.hidden = false;
+      chartPlaceholderEl.hidden = true;
+      chartStackedOptionEl.hidden = chartType !== "bar" && chartType !== "line";
+      chartTitleEl.textContent = data.colDimLabel
+        ? t("chartTitleTwo", { row: data.rowDimLabel, col: data.colDimLabel })
+        : t("chartTitleOne", { row: data.rowDimLabel });
+      const shownFirstExtra =
+        data.datasets.length > maxSeries ? t("chartShownFirst", { max: maxSeries }) : "";
+      const indexedExtra =
+        relativeBaseCode !== "__NONE__"
+          ? t("chartIndexed", {
+            base:
+              data.labels[data.rowCodes.findIndex((code) => String(code) === relativeBaseCode)] ||
+              relativeBaseCode
+          })
+          : "";
+      chartNoteEl.textContent = t("chartPointsSeries", {
+        points: data.labels.length,
+        series: filtered.length,
+        extra: shownFirstExtra + indexedExtra
+      });
+      if (chartInstance) {
+        const nextVisibility = {};
+        for (let idx = 0; idx < chartInstance.data.datasets.length; idx++) {
+          const ds = chartInstance.data.datasets[idx];
+          nextVisibility[(ds?.label || "") + "::" + idx] = chartInstance.isDatasetVisible(idx);
+        }
+        chartSeriesVisibility = nextVisibility;
+      }
+      destroyChart();
+      const colors = [
+        "#4e79a7",
+        "#f28e2b",
+        "#59a14f",
+        "#e15759",
+        "#76b7b2",
+        "#edc948",
+        "#b07aa1",
+        "#ff9da7",
+        "#9c755f",
+        "#bab0ab"
+      ];
+      chartInstance = new Chart(lineChartEl.getContext("2d"), {
+        type: chartType,
+        data: {
+          labels: data.labels,
+          datasets: filtered.map((dataset, idx) => ({
+            data: (() => {
+              if (relativeBaseCode === "__NONE__") return dataset.data;
+              const baseIdx = data.rowCodes.findIndex(
+                (code) => String(code) === String(relativeBaseCode)
+              );
+              const baseValue = baseIdx >= 0 ? dataset.data[baseIdx] : null;
+              if (typeof baseValue !== "number" || baseValue === 0) {
+                return dataset.data.map(() => null);
+              }
+              return dataset.data.map((value) =>
+                typeof value === "number" ? (value / baseValue) * 100 : null
+              );
+            })(),
+            label: dataset.label,
+            borderColor: colors[idx % colors.length],
+            backgroundColor: colors[idx % colors.length],
+            tension: chartType === "line" ? 0.2 : 0,
+            spanGaps: chartType === "line",
+            pointRadius: chartType === "line" ? 2 : 0,
+            borderWidth: chartType === "bar" ? 1 : 2,
+            fill: chartType === "line" ? isStacked : false,
+            hidden: chartSeriesVisibility[(dataset.label || "") + "::" + idx] === false
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom",
+              onClick(event, legendItem, legend) {
+                const chart = legend.chart;
+                const datasetIndex = legendItem.datasetIndex;
+                if (typeof datasetIndex !== "number") return;
+                const nativeEvent = event?.native || event;
+                const isolateOnlyOne = !!(nativeEvent?.metaKey || nativeEvent?.ctrlKey);
+                if (isolateOnlyOne) {
+                  const visibleIndexes = chart.data.datasets
+                    .map((_, idx) => idx)
+                    .filter((idx) => chart.isDatasetVisible(idx));
+                  const alreadyOnlyThisOne =
+                    visibleIndexes.length === 1 && visibleIndexes[0] === datasetIndex;
+                  if (alreadyOnlyThisOne) {
+                    for (let idx = 0; idx < chart.data.datasets.length; idx++) {
+                      chart.setDatasetVisibility(idx, true);
                     }
                   } else {
-                    chart.setDatasetVisibility(
-                      datasetIndex,
-                      !chart.isDatasetVisible(datasetIndex)
-                    );
+                    for (let idx = 0; idx < chart.data.datasets.length; idx++) {
+                      chart.setDatasetVisibility(idx, idx === datasetIndex);
+                    }
                   }
-                  chart.update();
+                } else {
+                  chart.setDatasetVisibility(
+                    datasetIndex,
+                    !chart.isDatasetVisible(datasetIndex)
+                  );
                 }
-              },
-              tooltip: {
-                mode: "index",
-                intersect: false
+                chart.update();
               }
             },
-            scales: {
-              y: {
-                stacked: isStacked,
-                min: shouldAnchorAtZero ? 0 : undefined,
-                ticks: { callback: (v) => Number(v).toLocaleString("cs-CZ") }
-              },
-              x: {
-                stacked: isStacked,
-                ticks: { maxRotation: 45, minRotation: 0 }
-              }
+            tooltip: {
+              mode: "index",
+              intersect: false
+            }
+          },
+          scales: {
+            y: {
+              stacked: isStacked,
+              min: shouldAnchorAtZero ? 0 : undefined,
+                ticks: {
+                  callback: (v) =>
+                    Number(v).toLocaleString(currentLang === "cs" ? "cs-CZ" : "en-US")
+                }
+            },
+            x: {
+              stacked: isStacked,
+              ticks: { maxRotation: 45, minRotation: 0 }
             }
           }
+        }
+      });
+    }
+
+    function setLayoutForSelection(hasSelection) {
+      document.body.classList.toggle("has-selection", hasSelection);
+      document.body.classList.toggle("is-centered", !hasSelection);
+    }
+
+    function parseUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      const datasetCode = params.get("d") || "";
+      const datasetVersion = params.get("dv") || "";
+      const source = params.get("s") || "__DATASET__";
+      const row = params.get("r") || "";
+      const col = params.get("c") || "__NONE__";
+      let filters = {};
+      try {
+        const rawFilters = params.get("f");
+        filters = rawFilters ? JSON.parse(rawFilters) : {};
+      } catch {
+        filters = {};
+      }
+      return { datasetCode, datasetVersion, source, row, col, filters };
+    }
+
+    function collectCurrentTableState() {
+      const filters = {};
+      if (currentDataset?.dimensionIds) {
+        for (const dimId of currentDataset.dimensionIds) {
+          const filterEl = document.getElementById("filter-" + dimId);
+          if (!filterEl) continue;
+          if (filterEl.multiple) {
+            const hasAllSelected = Array.from(filterEl.selectedOptions || []).some(
+              (option) => option.value === "__ALL__"
+            );
+            if (hasAllSelected) continue;
+            const selected = getConcreteSelectedCodes(filterEl, dimId);
+            const allCodes = currentDataset.dimensionCodes[dimId] || [];
+            if (!selected.length || selected.length === allCodes.length) continue;
+            filters[dimId] = selected;
+          } else {
+            if (filterEl.value === "__ALL__") continue;
+            filters[dimId] = filterEl.value;
+          }
+        }
+      }
+      return {
+        datasetCode: currentDatasetInfo?.kod || "",
+        datasetVersion: currentDatasetInfo?.verze || "",
+        source: viewSelectEl.value || "__DATASET__",
+        row: rowDimensionEl.value || "",
+        col: columnDimensionEl.value || "__NONE__",
+        filters
+      };
+    }
+
+    function updatePermalink() {
+      if (suppressUrlUpdate) return;
+      const state = collectCurrentTableState();
+      const params = new URLSearchParams();
+      if (state.datasetCode) params.set("d", state.datasetCode);
+      if (state.datasetVersion) params.set("dv", state.datasetVersion);
+      if (state.source && state.source !== "__DATASET__") params.set("s", state.source);
+      if (state.row) params.set("r", state.row);
+      if (state.col && state.col !== "__NONE__") params.set("c", state.col);
+      if (Object.keys(state.filters).length) params.set("f", JSON.stringify(state.filters));
+      const next =
+        window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+      window.history.replaceState(null, "", next);
+    }
+
+    function getConcreteSelectedCodes(selectEl, dimId) {
+      if (!selectEl || !currentDataset) return [];
+      const allowed = new Set(currentDataset.dimensionCodes[dimId] || []);
+      return Array.from(selectEl.selectedOptions || [])
+        .map((option) => option.value)
+        .filter((value) => allowed.has(value));
+    }
+
+    function getAxisCodesFromFilter(dimId) {
+      const allCodes = currentDataset.dimensionCodes[dimId] || [];
+      const filterEl = document.getElementById("filter-" + dimId);
+      const selected = getConcreteSelectedCodes(filterEl, dimId);
+      return selected.length ? selected : allCodes;
+    }
+
+    function normalizeMultiSelectState(selectEl) {
+      if (!selectEl?.multiple) return;
+      const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
+      if (!allOption) return;
+      const concreteSelected = Array.from(selectEl.selectedOptions || []).filter(
+        (option) => option.value !== "__ALL__"
+      );
+      if (allOption.selected && concreteSelected.length > 0) {
+        allOption.selected = false;
+      } else if (!allOption.selected && concreteSelected.length === 0) {
+        allOption.selected = true;
+      }
+    }
+
+    async function copyPermalink() {
+      updatePermalink();
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        const prev = permalinkBtnEl.textContent;
+        permalinkBtnEl.textContent = t("copied");
+        setTimeout(() => {
+          permalinkBtnEl.textContent = prev;
+        }, 1200);
+      } catch {
+        permalinkBtnEl.textContent = t("cannotCopy");
+        setTimeout(() => {
+          permalinkBtnEl.textContent = t("permalink");
+        }, 1200);
+      }
+    }
+
+    function getCommonHeaders() {
+      return {
+        Accept: "application/json",
+        "Accept-Language": currentLang === "cs" ? "cs" : "en"
+      };
+    }
+
+    function buildDatasetDataUrl(code, version) {
+      const dataUrl = new URL(DOTAZ_BASE + "/data/sady/" + encodeURIComponent(code));
+      dataUrl.searchParams.set("verze", version);
+      dataUrl.searchParams.set("format", "JSON_STAT");
+      dataUrl.searchParams.set("rozsah", "CELY_VYBER");
+      dataUrl.searchParams.set("poznamky", "false");
+      return dataUrl.toString();
+    }
+
+    async function fetchJsonWithTimeout(url, options, timeoutMs, required, label) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeoutMs);
+
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
         });
-      }
-
-      function setLayoutForSelection(hasSelection) {
-        document.body.classList.toggle("has-selection", hasSelection);
-        document.body.classList.toggle("is-centered", !hasSelection);
-      }
-
-      function parseUrlState() {
-        const params = new URLSearchParams(window.location.search);
-        const datasetCode = params.get("d") || "";
-        const datasetVersion = params.get("dv") || "";
-        const source = params.get("s") || "__DATASET__";
-        const row = params.get("r") || "";
-        const col = params.get("c") || "__NONE__";
-        let filters = {};
-        try {
-          const rawFilters = params.get("f");
-          filters = rawFilters ? JSON.parse(rawFilters) : {};
-        } catch {
-          filters = {};
-        }
-        return { datasetCode, datasetVersion, source, row, col, filters };
-      }
-
-      function collectCurrentTableState() {
-        const filters = {};
-        if (currentDataset?.dimensionIds) {
-          for (const dimId of currentDataset.dimensionIds) {
-            const filterEl = document.getElementById("filter-" + dimId);
-            if (!filterEl) continue;
-            if (filterEl.multiple) {
-              const hasAllSelected = Array.from(filterEl.selectedOptions || []).some(
-                (option) => option.value === "__ALL__"
-              );
-              if (hasAllSelected) continue;
-              const selected = getConcreteSelectedCodes(filterEl, dimId);
-              const allCodes = currentDataset.dimensionCodes[dimId] || [];
-              if (!selected.length || selected.length === allCodes.length) continue;
-              filters[dimId] = selected;
-            } else {
-              if (filterEl.value === "__ALL__") continue;
-              filters[dimId] = filterEl.value;
-            }
-          }
-        }
-        return {
-          datasetCode: currentDatasetInfo?.kod || "",
-          datasetVersion: currentDatasetInfo?.verze || "",
-          source: viewSelectEl.value || "__DATASET__",
-          row: rowDimensionEl.value || "",
-          col: columnDimensionEl.value || "__NONE__",
-          filters
-        };
-      }
-
-      function updatePermalink() {
-        if (suppressUrlUpdate) return;
-        const state = collectCurrentTableState();
-        const params = new URLSearchParams();
-        if (state.datasetCode) params.set("d", state.datasetCode);
-        if (state.datasetVersion) params.set("dv", state.datasetVersion);
-        if (state.source && state.source !== "__DATASET__") params.set("s", state.source);
-        if (state.row) params.set("r", state.row);
-        if (state.col && state.col !== "__NONE__") params.set("c", state.col);
-        if (Object.keys(state.filters).length) params.set("f", JSON.stringify(state.filters));
-        const next =
-          window.location.pathname + (params.toString() ? "?" + params.toString() : "");
-        window.history.replaceState(null, "", next);
-      }
-
-      function getConcreteSelectedCodes(selectEl, dimId) {
-        if (!selectEl || !currentDataset) return [];
-        const allowed = new Set(currentDataset.dimensionCodes[dimId] || []);
-        return Array.from(selectEl.selectedOptions || [])
-          .map((option) => option.value)
-          .filter((value) => allowed.has(value));
-      }
-
-      function getAxisCodesFromFilter(dimId) {
-        const allCodes = currentDataset.dimensionCodes[dimId] || [];
-        const filterEl = document.getElementById("filter-" + dimId);
-        const selected = getConcreteSelectedCodes(filterEl, dimId);
-        return selected.length ? selected : allCodes;
-      }
-
-      function normalizeMultiSelectState(selectEl) {
-        if (!selectEl?.multiple) return;
-        const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
-        if (!allOption) return;
-        const concreteSelected = Array.from(selectEl.selectedOptions || []).filter(
-          (option) => option.value !== "__ALL__"
-        );
-        if (allOption.selected && concreteSelected.length > 0) {
-          allOption.selected = false;
-        } else if (!allOption.selected && concreteSelected.length === 0) {
-          allOption.selected = true;
-        }
-      }
-
-      async function copyPermalink() {
-        updatePermalink();
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          const prev = permalinkBtnEl.textContent;
-          permalinkBtnEl.textContent = "Odkaz zkopírován";
-          setTimeout(() => {
-            permalinkBtnEl.textContent = prev;
-          }, 1200);
-        } catch {
-          permalinkBtnEl.textContent = "Nelze kopírovat";
-          setTimeout(() => {
-            permalinkBtnEl.textContent = "Kopírovat odkaz";
-          }, 1200);
-        }
-      }
-
-      function getCommonHeaders() {
-        return {
-          Accept: "application/json",
-          "Accept-Language": "cs"
-        };
-      }
-
-      function buildDatasetDataUrl(code, version) {
-        const dataUrl = new URL(DOTAZ_BASE + "/data/sady/" + encodeURIComponent(code));
-        dataUrl.searchParams.set("verze", version);
-        dataUrl.searchParams.set("format", "JSON_STAT");
-        dataUrl.searchParams.set("rozsah", "CELY_VYBER");
-        dataUrl.searchParams.set("poznamky", "false");
-        return dataUrl.toString();
-      }
-
-      async function fetchJsonWithTimeout(url, options, timeoutMs, required, label) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, timeoutMs);
-
-        try {
-          const response = await fetch(url, {
-            ...options,
-            signal: controller.signal
-          });
-          if (!response.ok) {
-            if (required) throw new Error(label + " HTTP " + response.status);
-            return null;
-          }
-          return await response.json();
-        } catch (error) {
-          if (required) {
-            if (error?.name === "AbortError") {
-              throw new Error(label + " timeout");
-            }
-            throw error;
-          }
+        if (!response.ok) {
+          if (required) throw new Error(label + " HTTP " + response.status);
           return null;
-        } finally {
-          clearTimeout(timeoutId);
         }
-      }
-
-      function product(values) {
-        if (!Array.isArray(values) || values.length === 0) return 0;
-        return values.reduce((acc, value) => acc * Number(value || 0), 1);
-      }
-
-      function getDimensionItemCodes(dimension) {
-        const index = dimension?.category?.index;
-        if (Array.isArray(index)) return index;
-        if (index && typeof index === "object") return Object.keys(index);
-        return [];
-      }
-
-      function getDimensionLabels(dimension) {
-        return dimension?.category?.label && typeof dimension.category.label === "object"
-          ? dimension.category.label
-          : {};
-      }
-
-      function createSelectOptions(selectEl, options) {
-        selectEl.innerHTML = "";
-        for (const option of options) {
-          const opt = document.createElement("option");
-          opt.value = option.value;
-          opt.textContent = option.label;
-          selectEl.appendChild(opt);
-        }
-      }
-
-      function getStrides(size) {
-        if (!Array.isArray(size) || size.length === 0) return [];
-        const strides = new Array(size.length).fill(1);
-        for (let i = size.length - 2; i >= 0; i--) {
-          strides[i] = strides[i + 1] * Number(size[i + 1] || 1);
-        }
-        return strides;
-      }
-
-      function getValueAt(values, index) {
-        if (Array.isArray(values)) return values[index] ?? null;
-        if (values && typeof values === "object") {
-          const key = String(index);
-          return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
+        return await response.json();
+      } catch (error) {
+        if (required) {
+          if (error?.name === "AbortError") {
+            throw new Error(label + " timeout");
+          }
+          throw error;
         }
         return null;
+      } finally {
+        clearTimeout(timeoutId);
       }
+    }
 
-      function buildDisplayLabel(code, labels) {
-        const name = labels?.[code];
-        if (!name) return code;
-        if (String(name).trim() === String(code).trim()) return code;
-        return code + " - " + name;
+    function product(values) {
+      if (!Array.isArray(values) || values.length === 0) return 0;
+      return values.reduce((acc, value) => acc * Number(value || 0), 1);
+    }
+
+    function getDimensionItemCodes(dimension) {
+      const index = dimension?.category?.index;
+      if (Array.isArray(index)) return index;
+      if (index && typeof index === "object") return Object.keys(index);
+      return [];
+    }
+
+    function getDimensionLabels(dimension) {
+      return dimension?.category?.label && typeof dimension.category.label === "object"
+        ? dimension.category.label
+        : {};
+    }
+
+    function createSelectOptions(selectEl, options) {
+      selectEl.innerHTML = "";
+      for (const option of options) {
+        const opt = document.createElement("option");
+        opt.value = option.value;
+        opt.textContent = option.label;
+        selectEl.appendChild(opt);
       }
+    }
 
-      function getDimensionDisplayName(dimId, dimensionNames) {
-        const name = dimensionNames?.[dimId];
-        return name ? name + " (" + dimId + ")" : dimId;
+    function getStrides(size) {
+      if (!Array.isArray(size) || size.length === 0) return [];
+      const strides = new Array(size.length).fill(1);
+      for (let i = size.length - 2; i >= 0; i--) {
+        strides[i] = strides[i + 1] * Number(size[i + 1] || 1);
       }
+      return strides;
+    }
 
-      function getViewCode(view) {
-        return view?.kod || view?.vyberKod || view?.id || "";
+    function getValueAt(values, index) {
+      if (Array.isArray(values)) return values[index] ?? null;
+      if (values && typeof values === "object") {
+        const key = String(index);
+        return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
       }
+      return null;
+    }
 
-      function getViewVersion(view) {
-        return view?.verze || view?.vyberVerze || "";
-      }
+    function buildDisplayLabel(code, labels) {
+      const name = labels?.[code];
+      if (!name) return code;
+      if (String(name).trim() === String(code).trim()) return code;
+      return code + " - " + name;
+    }
 
-      function getViewLabel(view) {
+    function getDimensionDisplayName(dimId, dimensionNames) {
+      const name = dimensionNames?.[dimId];
+      return name ? name + " (" + dimId + ")" : dimId;
+    }
+
+    function getViewCode(view) {
+      return view?.kod || view?.vyberKod || view?.id || "";
+    }
+
+    function getViewVersion(view) {
+      return view?.verze || view?.vyberVerze || "";
+    }
+
+    function getViewLabel(view) {
+      const code = getViewCode(view);
+      const name = view?.nazev || code || t("unnamedView");
+      return name + (code ? " (" + code + ")" : "");
+    }
+
+    function populateViewSelect(views, selectedValue) {
+      const options = [{ value: "__DATASET__", label: t("fullDataset") }];
+      for (const view of views) {
         const code = getViewCode(view);
-        const name = view?.nazev || code || "(nepojmenovaný výběr)";
-        return name + (code ? " (" + code + ")" : "");
+        if (!code) continue;
+        options.push({
+          value: code,
+          label: getViewLabel(view)
+        });
+      }
+      createSelectOptions(viewSelectEl, options);
+      viewSelectEl.value = selectedValue || "__DATASET__";
+    }
+
+    function getDimensionNameMapFrom(detail, dimensions, dimensionIds) {
+      const variantMap = Array.isArray(detail?.variantyDimenze) ? detail.variantyDimenze : [];
+      const variantNameByCode = Object.fromEntries(
+        variantMap
+          .filter((variant) => variant?.kod)
+          .map((variant) => [variant.kod, variant.nazev || ""])
+      );
+      const map = {};
+      for (const dimId of dimensionIds) {
+        const jsonStatLabel = dimensions?.[dimId]?.label || "";
+        map[dimId] = variantNameByCode[dimId] || jsonStatLabel || "";
+      }
+      return map;
+    }
+
+    function normalizeText(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    function scoreDataset(query, indexedItem) {
+      const normalizedQuery = normalizeText(query);
+      if (!normalizedQuery) return 0;
+      const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return 0;
+
+      let score = 0;
+      for (const token of tokens) {
+        const idxCode = indexedItem.normCode.indexOf(token);
+        const idxName = indexedItem.normName.indexOf(token);
+        const idxCombined = indexedItem.normCombined.indexOf(token);
+        const matches = [idxCode, idxName, idxCombined].filter((v) => v >= 0);
+        if (!matches.length) return -1;
+        const bestIndex = Math.min(...matches);
+        score += 1200 - bestIndex * 2 - token.length;
       }
 
-      function populateViewSelect(views, selectedValue) {
-        const options = [{ value: "__DATASET__", label: "Celá sada" }];
-        for (const view of views) {
-          const code = getViewCode(view);
-          if (!code) continue;
-          options.push({
-            value: code,
-            label: getViewLabel(view)
-          });
+      if (indexedItem.normCode === normalizedQuery) score += 2000;
+      else if (indexedItem.normCode.startsWith(normalizedQuery)) score += 600;
+      return score;
+    }
+
+    function hideDatasetDropdown() {
+      listEl.hidden = true;
+      filteredDatasetMatches = [];
+      activeDatasetMatchIndex = -1;
+    }
+
+    function positionDatasetDropdown() {
+      if (listEl.hidden) return;
+      const rect = searchEl.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const margin = 8;
+      const gap = 4;
+      const maxHeight = Math.min(320, Math.floor(viewportHeight * 0.45));
+      const spaceBelow = viewportHeight - rect.bottom - margin;
+      const spaceAbove = rect.top - margin;
+      const openUp = spaceBelow < 170 && spaceAbove > spaceBelow;
+      const available = openUp ? spaceAbove - gap : spaceBelow - gap;
+      const nextMaxHeight = Math.max(120, Math.min(maxHeight, Math.floor(available)));
+      listEl.style.maxHeight = nextMaxHeight + "px";
+      listEl.classList.toggle("open-up", openUp);
+    }
+
+    function setActiveDatasetMatch(index) {
+      if (!filteredDatasetMatches.length) {
+        activeDatasetMatchIndex = -1;
+        return;
+      }
+
+      const normalized =
+        ((index % filteredDatasetMatches.length) + filteredDatasetMatches.length) %
+        filteredDatasetMatches.length;
+      activeDatasetMatchIndex = normalized;
+
+      const buttons = listEl.querySelectorAll("button.dataset-btn");
+      buttons.forEach((button, i) => {
+        const isActive = i === activeDatasetMatchIndex;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+        if (isActive) {
+          button.scrollIntoView({ block: "nearest" });
         }
-        createSelectOptions(viewSelectEl, options);
-        viewSelectEl.value = selectedValue || "__DATASET__";
+      });
+    }
+
+    function selectActiveDatasetMatch() {
+      if (
+        activeDatasetMatchIndex < 0 ||
+        activeDatasetMatchIndex >= filteredDatasetMatches.length
+      ) {
+        return;
+      }
+      const match = filteredDatasetMatches[activeDatasetMatchIndex];
+      hideDatasetDropdown();
+      loadDatasetData(match.item);
+    }
+
+    function renderDatasetMatches(query) {
+      listEl.innerHTML = "";
+      const normalizedQuery = normalizeText(query);
+      if (!normalizedQuery) {
+        hideDatasetDropdown();
+        return;
       }
 
-      function getDimensionNameMapFrom(detail, dimensions, dimensionIds) {
-        const variantMap = Array.isArray(detail?.variantyDimenze) ? detail.variantyDimenze : [];
-        const variantNameByCode = Object.fromEntries(
-          variantMap
-            .filter((variant) => variant?.kod)
-            .map((variant) => [variant.kod, variant.nazev || ""])
-        );
-        const map = {};
-        for (const dimId of dimensionIds) {
-          const jsonStatLabel = dimensions?.[dimId]?.label || "";
-          map[dimId] = variantNameByCode[dimId] || jsonStatLabel || "";
-        }
-        return map;
+      const ranked = indexedDatasets
+        .map((entry) => ({
+          entry,
+          score: scoreDataset(normalizedQuery, entry)
+        }))
+        .filter((result) => (normalizedQuery ? result.score >= 0 : true))
+        .sort((a, b) => {
+          if (normalizedQuery && b.score !== a.score) return b.score - a.score;
+          return a.entry.displayLabel.localeCompare(b.entry.displayLabel, "cs");
+        })
+        .slice(0, MAX_SEARCH_RESULTS);
+
+      filteredDatasetMatches = ranked.map((result) => result.entry);
+
+      for (let i = 0; i < ranked.length; i++) {
+        const result = ranked[i];
+        const item = result.entry.item;
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.className = "dataset-btn";
+        button.type = "button";
+        const title = document.createElement("span");
+        title.className = "dataset-btn-title";
+        title.textContent = result.entry.name || result.entry.code || t("unnamedDataset");
+        const meta = document.createElement("span");
+        meta.className = "dataset-btn-meta";
+        meta.textContent =
+          (result.entry.code || "?") +
+          (result.entry.version ? " | " + t("versionShort") + result.entry.version : "");
+        button.appendChild(title);
+        button.appendChild(meta);
+        button.addEventListener("mouseenter", () => {
+          setActiveDatasetMatch(i);
+        });
+        button.addEventListener("click", () => {
+          hideDatasetDropdown();
+          loadDatasetData(item);
+        });
+        li.appendChild(button);
+        listEl.appendChild(li);
       }
 
-      function normalizeText(value) {
-        return String(value || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .trim();
-      }
-
-      function scoreDataset(query, indexedItem) {
-        const normalizedQuery = normalizeText(query);
-        if (!normalizedQuery) return 0;
-        const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
-        if (tokens.length === 0) return 0;
-
-        let score = 0;
-        for (const token of tokens) {
-          const idxCode = indexedItem.normCode.indexOf(token);
-          const idxName = indexedItem.normName.indexOf(token);
-          const idxCombined = indexedItem.normCombined.indexOf(token);
-          const matches = [idxCode, idxName, idxCombined].filter((v) => v >= 0);
-          if (!matches.length) return -1;
-          const bestIndex = Math.min(...matches);
-          score += 1200 - bestIndex * 2 - token.length;
-        }
-
-        if (indexedItem.normCode === normalizedQuery) score += 2000;
-        else if (indexedItem.normCode.startsWith(normalizedQuery)) score += 600;
-        return score;
-      }
-
-      function hideDatasetDropdown() {
-        listEl.hidden = true;
+      if (ranked.length === 0) {
         filteredDatasetMatches = [];
         activeDatasetMatchIndex = -1;
+        const li = document.createElement("li");
+        li.textContent = t("noDatasetMatches");
+        listEl.appendChild(li);
+      } else {
+        setActiveDatasetMatch(0);
       }
 
-      function positionDatasetDropdown() {
-        if (listEl.hidden) return;
-        const rect = searchEl.getBoundingClientRect();
-        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-        const margin = 8;
-        const gap = 4;
-        const maxHeight = Math.min(320, Math.floor(viewportHeight * 0.45));
-        const spaceBelow = viewportHeight - rect.bottom - margin;
-        const spaceAbove = rect.top - margin;
-        const openUp = spaceBelow < 170 && spaceAbove > spaceBelow;
-        const available = openUp ? spaceAbove - gap : spaceBelow - gap;
-        const nextMaxHeight = Math.max(120, Math.min(maxHeight, Math.floor(available)));
-        listEl.style.maxHeight = nextMaxHeight + "px";
-        listEl.classList.toggle("open-up", openUp);
+      listEl.hidden = false;
+      positionDatasetDropdown();
+    }
+
+
+    function renderTable() {
+      if (!currentDataset) return;
+
+      const {
+        dimensionIds,
+        dimensions,
+        values,
+        size,
+        strides,
+        codeToPosition,
+        dimensionNames
+      } = currentDataset;
+      const rowDim = rowDimensionEl.value;
+      const colDim = columnDimensionEl.value;
+
+      if (!rowDim || !codeToPosition[rowDim]) return;
+
+      const rowCodes = getAxisCodesFromFilter(rowDim);
+      const colCodes = colDim && colDim !== "__NONE__" ? getAxisCodesFromFilter(colDim) : ["__VALUE__"];
+      const cellCount = rowCodes.length * colCodes.length;
+
+      if (cellCount > MAX_TABLE_CELLS) {
+        tableContainerEl.innerHTML = "";
+        tableNoteEl.textContent = t("tableTooLarge", { cells: cellCount });
+        hideChart(t("chartDisabledLarge"));
+        return;
       }
 
-      function setActiveDatasetMatch(index) {
-        if (!filteredDatasetMatches.length) {
-          activeDatasetMatchIndex = -1;
-          return;
+      const selectedFilters = {};
+      for (const dimId of dimensionIds) {
+        const filterEl = document.getElementById("filter-" + dimId);
+        if (!filterEl) continue;
+        selectedFilters[dimId] = filterEl.value;
+      }
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+
+      const headRow = document.createElement("tr");
+      const corner = document.createElement("th");
+      corner.textContent = getDimensionDisplayName(rowDim, dimensionNames);
+      headRow.appendChild(corner);
+
+      const colLabels =
+        colDim && colDim !== "__NONE__" ? getDimensionLabels(dimensions[colDim]) : {};
+      const columnDisplayLabels = colCodes.map((colCode) =>
+        colCode === "__VALUE__" ? "Hodnota" : buildDisplayLabel(colCode, colLabels)
+      );
+
+      for (let i = 0; i < colCodes.length; i++) {
+        const colCode = colCodes[i];
+        const th = document.createElement("th");
+        th.textContent = columnDisplayLabels[i];
+        headRow.appendChild(th);
+      }
+      thead.appendChild(headRow);
+
+      const rowLabels = getDimensionLabels(dimensions[rowDim]);
+      const rowDimLabel = getDimensionDisplayName(rowDim, dimensionNames);
+      const colDimLabel =
+        colDim && colDim !== "__NONE__" ? getDimensionDisplayName(colDim, dimensionNames) : "";
+      const chartData = {
+        labels: [],
+        rowCodes: rowCodes.slice(),
+        colCodes: colCodes.slice(),
+        rowDimLabel,
+        colDimLabel,
+        datasets: columnDisplayLabels.map((label) => ({ label, data: [] }))
+      };
+
+      for (const rowCode of rowCodes) {
+        const tr = document.createElement("tr");
+        const rowHeader = document.createElement("th");
+        const rowLabel = buildDisplayLabel(rowCode, rowLabels);
+        rowHeader.textContent = rowLabel;
+        tr.appendChild(rowHeader);
+        chartData.labels.push(rowLabel);
+
+        for (let colIdx = 0; colIdx < colCodes.length; colIdx++) {
+          const colCode = colCodes[colIdx];
+          const td = document.createElement("td");
+          const indices = [];
+          let valid = true;
+
+          for (let i = 0; i < dimensionIds.length; i++) {
+            const dimId = dimensionIds[i];
+            let code;
+
+            if (dimId === rowDim) code = rowCode;
+            else if (colDim !== "__NONE__" && dimId === colDim) code = colCode;
+            else {
+              const selected = selectedFilters[dimId];
+              code =
+                !selected || selected === "__ALL__"
+                  ? currentDataset.dimensionCodes[dimId]?.[0] || ""
+                  : selected;
+            }
+
+            const pos = codeToPosition[dimId]?.[code];
+            if (typeof pos !== "number") {
+              valid = false;
+              break;
+            }
+            indices[i] = pos;
+          }
+
+          if (!valid) {
+            td.textContent = "—";
+            chartData.datasets[colIdx].data.push(null);
+          } else {
+            let flatIndex = 0;
+            for (let i = 0; i < indices.length; i++) {
+              flatIndex += indices[i] * strides[i];
+            }
+            const value = getValueAt(values, flatIndex);
+            td.textContent = value == null ? "" : String(value);
+            chartData.datasets[colIdx].data.push(parseNumericValue(value));
+          }
+
+          tr.appendChild(td);
         }
 
-        const normalized =
-          ((index % filteredDatasetMatches.length) + filteredDatasetMatches.length) %
-          filteredDatasetMatches.length;
-        activeDatasetMatchIndex = normalized;
+        tbody.appendChild(tr);
+      }
 
-        const buttons = listEl.querySelectorAll("button.dataset-btn");
-        buttons.forEach((button, i) => {
-          const isActive = i === activeDatasetMatchIndex;
-          button.classList.toggle("is-active", isActive);
-          button.setAttribute("aria-selected", isActive ? "true" : "false");
-          if (isActive) {
-            button.scrollIntoView({ block: "nearest" });
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      tableContainerEl.innerHTML = "";
+      tableContainerEl.appendChild(table);
+      tableNoteEl.textContent = "";
+      renderChartData(chartData);
+    }
+
+    function syncFiltersWithAxes() {
+      const rowDim = rowDimensionEl.value;
+      const colDim = columnDimensionEl.value;
+
+      for (const dimId of currentDataset.dimensionIds) {
+        const selectEl = document.getElementById("filter-" + dimId);
+        if (!selectEl) continue;
+        const codes = currentDataset.dimensionCodes[dimId] || [];
+        const selectedCodes = getConcreteSelectedCodes(selectEl, dimId);
+
+        const isAxis = dimId === rowDim || (colDim !== "__NONE__" && dimId === colDim);
+        const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
+        if (isAxis) {
+          selectEl.disabled = false;
+          selectEl.multiple = true;
+          selectEl.size = Math.min(Math.max(codes.length, 3), 8);
+          if (allOption) allOption.disabled = false;
+          if (!selectedCodes.length) {
+            if (allOption) {
+              allOption.selected = true;
+              for (const option of selectEl.options) {
+                if (option.value !== "__ALL__") option.selected = false;
+              }
+            } else {
+              for (const option of selectEl.options) {
+                option.selected = codes.includes(option.value);
+              }
+            }
+          } else if (allOption) {
+            allOption.selected = false;
           }
+          normalizeMultiSelectState(selectEl);
+        } else {
+          selectEl.multiple = false;
+          selectEl.size = 1;
+          if (allOption) allOption.disabled = true;
+          if (selectedCodes.length) {
+            selectEl.value = selectedCodes[0];
+          } else if (selectEl.value === "__ALL__") {
+            const firstCode = codes[0] || "";
+            selectEl.value = firstCode;
+          }
+        }
+      }
+    }
+
+    function syncAxisSelectAvailability() {
+      const rowValue = rowDimensionEl.value;
+      const colValue = columnDimensionEl.value;
+
+      for (const option of columnDimensionEl.options) {
+        option.disabled = option.value !== "__NONE__" && option.value === rowValue;
+      }
+      if (
+        columnDimensionEl.selectedOptions[0] &&
+        columnDimensionEl.selectedOptions[0].disabled
+      ) {
+        columnDimensionEl.value = "__NONE__";
+      }
+
+      for (const option of rowDimensionEl.options) {
+        option.disabled = option.value === colValue;
+      }
+      if (rowDimensionEl.selectedOptions[0] && rowDimensionEl.selectedOptions[0].disabled) {
+        const fallback = Array.from(rowDimensionEl.options).find((option) => !option.disabled);
+        if (fallback) rowDimensionEl.value = fallback.value;
+      }
+      swapAxesBtnEl.disabled = !colValue || colValue === "__NONE__";
+    }
+
+    function applyTableState(tableState) {
+      if (!tableState || !currentDataset) return;
+
+      suppressUrlUpdate = true;
+      if (tableState.row) {
+        const rowOption = Array.from(rowDimensionEl.options).find(
+          (option) => option.value === tableState.row
+        );
+        if (rowOption) rowDimensionEl.value = tableState.row;
+      }
+      if (tableState.col) {
+        const colOption = Array.from(columnDimensionEl.options).find(
+          (option) => option.value === tableState.col
+        );
+        if (colOption) columnDimensionEl.value = tableState.col;
+      }
+      syncAxisSelectAvailability();
+      syncFiltersWithAxes();
+
+      const filters = tableState.filters && typeof tableState.filters === "object"
+        ? tableState.filters
+        : {};
+      for (const [dimId, value] of Object.entries(filters)) {
+        const filterEl = document.getElementById("filter-" + dimId);
+        if (!filterEl) continue;
+        if (Array.isArray(value) && filterEl.multiple) {
+          const selectedSet = new Set(value.map(String));
+          let selectedCount = 0;
+          for (const option of filterEl.options) {
+            const shouldSelect = selectedSet.has(option.value);
+            option.selected = shouldSelect;
+            if (shouldSelect) selectedCount++;
+          }
+          if (selectedCount === 0) {
+            const allOption = Array.from(filterEl.options).find(
+              (option) => option.value === "__ALL__"
+            );
+            if (allOption) allOption.selected = true;
+          }
+        } else {
+          const hasOption = Array.from(filterEl.options).some((option) => option.value === value);
+          if (hasOption) filterEl.value = value;
+        }
+      }
+      renderTable();
+      suppressUrlUpdate = false;
+      updatePermalink();
+    }
+
+    function setupTableUi(jsonStat, dimensionNames) {
+      const dimensionIds = Array.isArray(jsonStat?.id)
+        ? jsonStat.id
+        : Object.keys(jsonStat?.dimension || {});
+      const dimensions = jsonStat?.dimension || {};
+      const values = jsonStat?.value;
+      const size = Array.isArray(jsonStat?.size) ? jsonStat.size : [];
+      const strides = getStrides(size);
+      const dimensionCodes = {};
+      const codeToPosition = {};
+
+      for (const dimId of dimensionIds) {
+        const dim = dimensions[dimId];
+        const codes = getDimensionItemCodes(dim);
+        dimensionCodes[dimId] = codes;
+        codeToPosition[dimId] = {};
+        codes.forEach((code, index) => {
+          codeToPosition[dimId][code] = index;
         });
       }
 
-      function selectActiveDatasetMatch() {
-        if (
-          activeDatasetMatchIndex < 0 ||
-          activeDatasetMatchIndex >= filteredDatasetMatches.length
-        ) {
-          return;
-        }
-        const match = filteredDatasetMatches[activeDatasetMatchIndex];
-        hideDatasetDropdown();
-        loadDatasetData(match.item);
-      }
+      currentDataset = {
+        dimensionIds,
+        dimensions,
+        values,
+        size,
+        strides,
+        dimensionCodes,
+        codeToPosition,
+        dimensionNames
+      };
 
-      function renderDatasetMatches(query) {
-        listEl.innerHTML = "";
-        const normalizedQuery = normalizeText(query);
-        if (!normalizedQuery) {
-          hideDatasetDropdown();
-          return;
-        }
+      const rowOptions = dimensionIds.map((dimId) => ({
+        value: dimId,
+        label: getDimensionDisplayName(dimId, dimensionNames)
+      }));
+      createSelectOptions(rowDimensionEl, rowOptions);
 
-        const ranked = indexedDatasets
-          .map((entry) => ({
-            entry,
-            score: scoreDataset(normalizedQuery, entry)
-          }))
-          .filter((result) => (normalizedQuery ? result.score >= 0 : true))
-          .sort((a, b) => {
-            if (normalizedQuery && b.score !== a.score) return b.score - a.score;
-            return a.entry.displayLabel.localeCompare(b.entry.displayLabel, "cs");
-          })
-          .slice(0, MAX_SEARCH_RESULTS);
-
-        filteredDatasetMatches = ranked.map((result) => result.entry);
-
-        for (let i = 0; i < ranked.length; i++) {
-          const result = ranked[i];
-          const item = result.entry.item;
-          const li = document.createElement("li");
-          const button = document.createElement("button");
-          button.className = "dataset-btn";
-          button.type = "button";
-          const title = document.createElement("span");
-          title.className = "dataset-btn-title";
-          title.textContent = result.entry.name || result.entry.code || "(nepojmenovaná datová sada)";
-          const meta = document.createElement("span");
-          meta.className = "dataset-btn-meta";
-          meta.textContent =
-            (result.entry.code || "?") + (result.entry.version ? " | verze " + result.entry.version : "");
-          button.appendChild(title);
-          button.appendChild(meta);
-          button.addEventListener("mouseenter", () => {
-            setActiveDatasetMatch(i);
-          });
-          button.addEventListener("click", () => {
-            hideDatasetDropdown();
-            loadDatasetData(item);
-          });
-          li.appendChild(button);
-          listEl.appendChild(li);
-        }
-
-        if (ranked.length === 0) {
-          filteredDatasetMatches = [];
-          activeDatasetMatchIndex = -1;
-          const li = document.createElement("li");
-          li.textContent = "Nenalezeny žádné odpovídající datové sady.";
-          listEl.appendChild(li);
-        } else {
-          setActiveDatasetMatch(0);
-        }
-
-        listEl.hidden = false;
-        positionDatasetDropdown();
-      }
-
-
-      function renderTable() {
-        if (!currentDataset) return;
-
-        const {
-          dimensionIds,
-          dimensions,
-          values,
-          size,
-          strides,
-          codeToPosition,
-          dimensionNames
-        } = currentDataset;
-        const rowDim = rowDimensionEl.value;
-        const colDim = columnDimensionEl.value;
-
-        if (!rowDim || !codeToPosition[rowDim]) return;
-
-        const rowCodes = getAxisCodesFromFilter(rowDim);
-        const colCodes = colDim && colDim !== "__NONE__" ? getAxisCodesFromFilter(colDim) : ["__VALUE__"];
-        const cellCount = rowCodes.length * colCodes.length;
-
-        if (cellCount > MAX_TABLE_CELLS) {
-          tableContainerEl.innerHTML = "";
-          tableNoteEl.textContent =
-            "Tabulka je příliš velká (" +
-            cellCount +
-            " buněk). Vyberte dimenze s menším počtem hodnot nebo upravte filtry.";
-          hideChart("Graf je vypnut kvůli velikosti tabulky.");
-          return;
-        }
-
-        const selectedFilters = {};
-        for (const dimId of dimensionIds) {
-          const filterEl = document.getElementById("filter-" + dimId);
-          if (!filterEl) continue;
-          selectedFilters[dimId] = filterEl.value;
-        }
-
-        const table = document.createElement("table");
-        const thead = document.createElement("thead");
-        const tbody = document.createElement("tbody");
-
-        const headRow = document.createElement("tr");
-        const corner = document.createElement("th");
-        corner.textContent = getDimensionDisplayName(rowDim, dimensionNames);
-        headRow.appendChild(corner);
-
-        const colLabels =
-          colDim && colDim !== "__NONE__" ? getDimensionLabels(dimensions[colDim]) : {};
-        const columnDisplayLabels = colCodes.map((colCode) =>
-          colCode === "__VALUE__" ? "Hodnota" : buildDisplayLabel(colCode, colLabels)
-        );
-
-        for (let i = 0; i < colCodes.length; i++) {
-          const colCode = colCodes[i];
-          const th = document.createElement("th");
-          th.textContent = columnDisplayLabels[i];
-          headRow.appendChild(th);
-        }
-        thead.appendChild(headRow);
-
-        const rowLabels = getDimensionLabels(dimensions[rowDim]);
-        const rowDimLabel = getDimensionDisplayName(rowDim, dimensionNames);
-        const colDimLabel =
-          colDim && colDim !== "__NONE__" ? getDimensionDisplayName(colDim, dimensionNames) : "";
-        const chartData = {
-          labels: [],
-          rowCodes: rowCodes.slice(),
-          colCodes: colCodes.slice(),
-          rowDimLabel,
-          colDimLabel,
-          datasets: columnDisplayLabels.map((label) => ({ label, data: [] }))
-        };
-
-        for (const rowCode of rowCodes) {
-          const tr = document.createElement("tr");
-          const rowHeader = document.createElement("th");
-          const rowLabel = buildDisplayLabel(rowCode, rowLabels);
-          rowHeader.textContent = rowLabel;
-          tr.appendChild(rowHeader);
-          chartData.labels.push(rowLabel);
-
-          for (let colIdx = 0; colIdx < colCodes.length; colIdx++) {
-            const colCode = colCodes[colIdx];
-            const td = document.createElement("td");
-            const indices = [];
-            let valid = true;
-
-            for (let i = 0; i < dimensionIds.length; i++) {
-              const dimId = dimensionIds[i];
-              let code;
-
-              if (dimId === rowDim) code = rowCode;
-              else if (colDim !== "__NONE__" && dimId === colDim) code = colCode;
-              else {
-                const selected = selectedFilters[dimId];
-                code =
-                  !selected || selected === "__ALL__"
-                    ? currentDataset.dimensionCodes[dimId]?.[0] || ""
-                    : selected;
-              }
-
-              const pos = codeToPosition[dimId]?.[code];
-              if (typeof pos !== "number") {
-                valid = false;
-                break;
-              }
-              indices[i] = pos;
-            }
-
-            if (!valid) {
-              td.textContent = "—";
-              chartData.datasets[colIdx].data.push(null);
-            } else {
-              let flatIndex = 0;
-              for (let i = 0; i < indices.length; i++) {
-                flatIndex += indices[i] * strides[i];
-              }
-              const value = getValueAt(values, flatIndex);
-              td.textContent = value == null ? "" : String(value);
-              chartData.datasets[colIdx].data.push(parseNumericValue(value));
-            }
-
-            tr.appendChild(td);
-          }
-
-          tbody.appendChild(tr);
-        }
-
-        table.appendChild(thead);
-        table.appendChild(tbody);
-        tableContainerEl.innerHTML = "";
-        tableContainerEl.appendChild(table);
-        tableNoteEl.textContent = "";
-        renderChartData(chartData);
-      }
-
-      function syncFiltersWithAxes() {
-        const rowDim = rowDimensionEl.value;
-        const colDim = columnDimensionEl.value;
-
-        for (const dimId of currentDataset.dimensionIds) {
-          const selectEl = document.getElementById("filter-" + dimId);
-          if (!selectEl) continue;
-          const codes = currentDataset.dimensionCodes[dimId] || [];
-          const selectedCodes = getConcreteSelectedCodes(selectEl, dimId);
-
-          const isAxis = dimId === rowDim || (colDim !== "__NONE__" && dimId === colDim);
-          const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
-          if (isAxis) {
-            selectEl.disabled = false;
-            selectEl.multiple = true;
-            selectEl.size = Math.min(Math.max(codes.length, 3), 8);
-            if (allOption) allOption.disabled = false;
-            if (!selectedCodes.length) {
-              if (allOption) {
-                allOption.selected = true;
-                for (const option of selectEl.options) {
-                  if (option.value !== "__ALL__") option.selected = false;
-                }
-              } else {
-                for (const option of selectEl.options) {
-                  option.selected = codes.includes(option.value);
-                }
-              }
-            } else if (allOption) {
-              allOption.selected = false;
-            }
-            normalizeMultiSelectState(selectEl);
-          } else {
-            selectEl.multiple = false;
-            selectEl.size = 1;
-            if (allOption) allOption.disabled = true;
-            if (selectedCodes.length) {
-              selectEl.value = selectedCodes[0];
-            } else if (selectEl.value === "__ALL__") {
-              const firstCode = codes[0] || "";
-              selectEl.value = firstCode;
-            }
-          }
-        }
-      }
-
-      function syncAxisSelectAvailability() {
-        const rowValue = rowDimensionEl.value;
-        const colValue = columnDimensionEl.value;
-
-        for (const option of columnDimensionEl.options) {
-          option.disabled = option.value !== "__NONE__" && option.value === rowValue;
-        }
-        if (
-          columnDimensionEl.selectedOptions[0] &&
-          columnDimensionEl.selectedOptions[0].disabled
-        ) {
-          columnDimensionEl.value = "__NONE__";
-        }
-
-        for (const option of rowDimensionEl.options) {
-          option.disabled = option.value === colValue;
-        }
-        if (rowDimensionEl.selectedOptions[0] && rowDimensionEl.selectedOptions[0].disabled) {
-          const fallback = Array.from(rowDimensionEl.options).find((option) => !option.disabled);
-          if (fallback) rowDimensionEl.value = fallback.value;
-        }
-        swapAxesBtnEl.disabled = !colValue || colValue === "__NONE__";
-      }
-
-      function applyTableState(tableState) {
-        if (!tableState || !currentDataset) return;
-
-        suppressUrlUpdate = true;
-        if (tableState.row) {
-          const rowOption = Array.from(rowDimensionEl.options).find(
-            (option) => option.value === tableState.row
-          );
-          if (rowOption) rowDimensionEl.value = tableState.row;
-        }
-        if (tableState.col) {
-          const colOption = Array.from(columnDimensionEl.options).find(
-            (option) => option.value === tableState.col
-          );
-          if (colOption) columnDimensionEl.value = tableState.col;
-        }
-        syncAxisSelectAvailability();
-        syncFiltersWithAxes();
-
-        const filters = tableState.filters && typeof tableState.filters === "object"
-          ? tableState.filters
-          : {};
-        for (const [dimId, value] of Object.entries(filters)) {
-          const filterEl = document.getElementById("filter-" + dimId);
-          if (!filterEl) continue;
-          if (Array.isArray(value) && filterEl.multiple) {
-            const selectedSet = new Set(value.map(String));
-            let selectedCount = 0;
-            for (const option of filterEl.options) {
-              const shouldSelect = selectedSet.has(option.value);
-              option.selected = shouldSelect;
-              if (shouldSelect) selectedCount++;
-            }
-            if (selectedCount === 0) {
-              const allOption = Array.from(filterEl.options).find(
-                (option) => option.value === "__ALL__"
-              );
-              if (allOption) allOption.selected = true;
-            }
-          } else {
-            const hasOption = Array.from(filterEl.options).some((option) => option.value === value);
-            if (hasOption) filterEl.value = value;
-          }
-        }
-        renderTable();
-        suppressUrlUpdate = false;
-        updatePermalink();
-      }
-
-      function setupTableUi(jsonStat, dimensionNames) {
-        const dimensionIds = Array.isArray(jsonStat?.id)
-          ? jsonStat.id
-          : Object.keys(jsonStat?.dimension || {});
-        const dimensions = jsonStat?.dimension || {};
-        const values = jsonStat?.value;
-        const size = Array.isArray(jsonStat?.size) ? jsonStat.size : [];
-        const strides = getStrides(size);
-        const dimensionCodes = {};
-        const codeToPosition = {};
-
-        for (const dimId of dimensionIds) {
-          const dim = dimensions[dimId];
-          const codes = getDimensionItemCodes(dim);
-          dimensionCodes[dimId] = codes;
-          codeToPosition[dimId] = {};
-          codes.forEach((code, index) => {
-            codeToPosition[dimId][code] = index;
-          });
-        }
-
-        currentDataset = {
-          dimensionIds,
-          dimensions,
-          values,
-          size,
-          strides,
-          dimensionCodes,
-          codeToPosition,
-          dimensionNames
-        };
-
-        const rowOptions = dimensionIds.map((dimId) => ({
+      const colOptions = [{ value: "__NONE__", label: t("noColumn") }].concat(
+        dimensionIds.map((dimId) => ({
           value: dimId,
           label: getDimensionDisplayName(dimId, dimensionNames)
-        }));
-        createSelectOptions(rowDimensionEl, rowOptions);
+        }))
+      );
+      createSelectOptions(columnDimensionEl, colOptions);
 
-        const colOptions = [{ value: "__NONE__", label: "(žádný sloupec)" }].concat(
-          dimensionIds.map((dimId) => ({
-            value: dimId,
-            label: getDimensionDisplayName(dimId, dimensionNames)
+      rowDimensionEl.value = dimensionIds[0] || "";
+      columnDimensionEl.value = dimensionIds[1] || "__NONE__";
+      syncAxisSelectAvailability();
+
+      dimensionFiltersEl.innerHTML = "";
+      for (const dimId of dimensionIds) {
+        const row = document.createElement("div");
+        row.className = "control-row";
+
+        const label = document.createElement("label");
+        label.htmlFor = "filter-" + dimId;
+        label.textContent = getDimensionDisplayName(dimId, dimensionNames) + ":";
+
+        const select = document.createElement("select");
+        select.id = "filter-" + dimId;
+        const labels = getDimensionLabels(dimensions[dimId]);
+        const codes = dimensionCodes[dimId] || [];
+        const truncated = codes.length > MAX_FILTER_OPTIONS;
+        const visibleCodes = truncated ? codes.slice(0, MAX_FILTER_OPTIONS) : codes;
+        const options = [{ value: "__ALL__", label: t("all") }].concat(
+          visibleCodes.map((code) => ({
+            value: code,
+            label: buildDisplayLabel(code, labels)
           }))
         );
-        createSelectOptions(columnDimensionEl, colOptions);
-
-        rowDimensionEl.value = dimensionIds[0] || "";
-        columnDimensionEl.value = dimensionIds[1] || "__NONE__";
-        syncAxisSelectAvailability();
-
-        dimensionFiltersEl.innerHTML = "";
-        for (const dimId of dimensionIds) {
-          const row = document.createElement("div");
-          row.className = "control-row";
-
-          const label = document.createElement("label");
-          label.htmlFor = "filter-" + dimId;
-          label.textContent = getDimensionDisplayName(dimId, dimensionNames) + ":";
-
-          const select = document.createElement("select");
-          select.id = "filter-" + dimId;
-          const labels = getDimensionLabels(dimensions[dimId]);
-          const codes = dimensionCodes[dimId] || [];
-          const truncated = codes.length > MAX_FILTER_OPTIONS;
-          const visibleCodes = truncated ? codes.slice(0, MAX_FILTER_OPTIONS) : codes;
-          const options = [{ value: "__ALL__", label: "(vše)" }].concat(
-            visibleCodes.map((code) => ({
-              value: code,
-              label: buildDisplayLabel(code, labels)
-            }))
-          );
-          createSelectOptions(select, options);
-          if (truncated) {
-            const noteOpt = document.createElement("option");
-            noteOpt.value = "";
-            noteOpt.disabled = true;
-            noteOpt.textContent = "… příliš mnoho položek (" + codes.length + ")";
-            select.appendChild(noteOpt);
-          }
-
-          row.appendChild(label);
-          row.appendChild(select);
-          dimensionFiltersEl.appendChild(row);
-
-          select.addEventListener("change", () => {
-            normalizeMultiSelectState(select);
-            renderTable();
-            updatePermalink();
-          });
+        createSelectOptions(select, options);
+        if (truncated) {
+          const noteOpt = document.createElement("option");
+          noteOpt.value = "";
+          noteOpt.disabled = true;
+          noteOpt.textContent = t("tooManyItems", { count: codes.length });
+          select.appendChild(noteOpt);
         }
 
-        rowDimensionEl.onchange = () => {
-          syncAxisSelectAvailability();
-          syncFiltersWithAxes();
+        row.appendChild(label);
+        row.appendChild(select);
+        dimensionFiltersEl.appendChild(row);
+
+        select.addEventListener("change", () => {
+          normalizeMultiSelectState(select);
           renderTable();
           updatePermalink();
-        };
+        });
+      }
 
-        columnDimensionEl.onchange = () => {
-          syncAxisSelectAvailability();
-          syncFiltersWithAxes();
-          renderTable();
-          updatePermalink();
-        };
-
-        tableControlsEl.hidden = false;
-        chartSectionEl.hidden = false;
+      rowDimensionEl.onchange = () => {
+        syncAxisSelectAvailability();
         syncFiltersWithAxes();
         renderTable();
         updatePermalink();
-      }
+      };
 
-      function applySourceData(jsonStat) {
-        const dimensionIds = Array.isArray(jsonStat?.id)
-          ? jsonStat.id
-          : Object.keys(jsonStat?.dimension || {});
-        const dimensions = jsonStat?.dimension || {};
-        const dimensionNames = getDimensionNameMapFrom(currentDatasetDetail, dimensions, dimensionIds);
-        setupTableUi(jsonStat, dimensionNames);
-      }
+      columnDimensionEl.onchange = () => {
+        syncAxisSelectAvailability();
+        syncFiltersWithAxes();
+        renderTable();
+        updatePermalink();
+      };
 
-      async function loadSelectedSource(tableState) {
-        if (!currentDatasetInfo) return;
-        const selectedCode = viewSelectEl.value;
+      tableControlsEl.hidden = false;
+      chartSectionEl.hidden = false;
+      syncFiltersWithAxes();
+      renderTable();
+      updatePermalink();
+    }
 
-        try {
-          if (selectedCode === "__DATASET__") {
-            if (!currentBaseJsonStat) {
-              const dataUrl = buildDatasetDataUrl(currentDatasetInfo.kod, currentDatasetInfo.verze);
-              currentBaseJsonStat = await fetchJsonWithTimeout(
-                dataUrl,
-                {
-                  mode: "cors",
-                  headers: getCommonHeaders()
-                },
-                20000,
-                true,
-                "Data"
-              );
-            }
-            applySourceData(currentBaseJsonStat);
-            if (tableState) applyTableState(tableState);
-            else updatePermalink();
-            return;
+    function applySourceData(jsonStat) {
+      const dimensionIds = Array.isArray(jsonStat?.id)
+        ? jsonStat.id
+        : Object.keys(jsonStat?.dimension || {});
+      const dimensions = jsonStat?.dimension || {};
+      const dimensionNames = getDimensionNameMapFrom(currentDatasetDetail, dimensions, dimensionIds);
+      setupTableUi(jsonStat, dimensionNames);
+    }
+
+    async function loadSelectedSource(tableState) {
+      if (!currentDatasetInfo) return;
+      const selectedCode = viewSelectEl.value;
+
+      try {
+        if (selectedCode === "__DATASET__") {
+          if (!currentBaseJsonStat) {
+            const dataUrl = buildDatasetDataUrl(currentDatasetInfo.kod, currentDatasetInfo.verze);
+            currentBaseJsonStat = await fetchJsonWithTimeout(
+              dataUrl,
+              {
+                mode: "cors",
+                headers: getCommonHeaders()
+              },
+              20000,
+              true,
+              "Data"
+            );
           }
-
-          const selectedView = currentDatasetViews.find((view) => getViewCode(view) === selectedCode);
-          if (!selectedView) return;
-
-          statusEl.textContent = "Načítám výběr " + selectedCode + "...";
-          const viewUrl = new URL(DOTAZ_BASE + "/data/vybery/" + encodeURIComponent(selectedCode));
-          const viewVersion = getViewVersion(selectedView);
-          if (viewVersion) viewUrl.searchParams.set("verze", viewVersion);
-          if (currentDatasetInfo.verze) viewUrl.searchParams.set("verzeSady", currentDatasetInfo.verze);
-          viewUrl.searchParams.set("format", "JSON_STAT");
-          viewUrl.searchParams.set("rozsah", "CELY_VYBER");
-          viewUrl.searchParams.set("poznamky", "false");
-
-          const jsonStat = await fetchJsonWithTimeout(
-            viewUrl.toString(),
-            {
-              mode: "cors",
-              headers: getCommonHeaders()
-            },
-            15000,
-            true,
-            "View"
-          );
-          applySourceData(jsonStat);
+          applySourceData(currentBaseJsonStat);
           if (tableState) applyTableState(tableState);
           else updatePermalink();
-          statusEl.textContent = "Načteno " + allDatasets.length + " datových sad.";
-        } catch (error) {
-          statusEl.textContent =
-            "Nepodařilo se načíst výběr. " +
-            (error instanceof Error ? error.message : String(error));
+          return;
         }
-      }
 
-      async function loadDatasetData(dataset) {
-        const code = dataset?.kod;
-        const version = dataset?.verze;
-        const name = dataset?.nazev || code;
+        const selectedView = currentDatasetViews.find((view) => getViewCode(view) === selectedCode);
+        if (!selectedView) return;
 
-        if (!code || !version) return;
+        statusEl.textContent = t("loadingSelection", { code: selectedCode });
+        const viewUrl = new URL(DOTAZ_BASE + "/data/vybery/" + encodeURIComponent(selectedCode));
+        const viewVersion = getViewVersion(selectedView);
+        if (viewVersion) viewUrl.searchParams.set("verze", viewVersion);
+        if (currentDatasetInfo.verze) viewUrl.searchParams.set("verzeSady", currentDatasetInfo.verze);
+        viewUrl.searchParams.set("format", "JSON_STAT");
+        viewUrl.searchParams.set("rozsah", "CELY_VYBER");
+        viewUrl.searchParams.set("poznamky", "false");
 
-        statusEl.textContent = "Načítám sadu " + code + "...";
-        const previousState = {
-          currentDataset,
-          currentDatasetInfo,
-          currentDatasetViews,
-          currentDatasetDetail,
-          currentBaseJsonStat
-        };
-        currentDatasetInfo = { kod: code, verze: version, nazev: name };
-        currentDatasetViews = [];
-        currentDatasetDetail = null;
-        currentBaseJsonStat = null;
-
-        try {
-          const detailUrl = new URL(KATALOG_ENDPOINT + "/" + encodeURIComponent(code));
-          detailUrl.searchParams.set("verze", version);
-          const viewsUrl = new URL(
-            KATALOG_ENDPOINT + "/" + encodeURIComponent(code) + "/vybery"
-          );
-
-          const detailPromise = fetchJsonWithTimeout(
-            detailUrl.toString(),
-            {
-              mode: "cors",
-              headers: getCommonHeaders()
-            },
-            8000,
-            false,
-            "Detail"
-          );
-          const viewsPromise = fetchJsonWithTimeout(
-            viewsUrl.toString(),
-            {
-              mode: "cors",
-              headers: getCommonHeaders()
-            },
-            8000,
-            false,
-            "Views"
-          );
-
-          const [detailMaybe, viewsMaybe] = await Promise.all([
-            detailPromise,
-            viewsPromise
-          ]);
-          const detail = detailMaybe || {};
-          const views = Array.isArray(viewsMaybe) ? viewsMaybe : [];
-          currentDatasetDetail = detail;
-          currentDatasetViews = views;
-
-          datasetTitleEl.textContent = name + " (" + code + ")";
-          populateViewSelect(currentDatasetViews, "__DATASET__");
-          let initialSource = "__DATASET__";
-          if (initialUrlState && initialUrlState.datasetCode === code && initialUrlState.source) {
-            const exists = Array.from(viewSelectEl.options).some(
-              (option) => option.value === initialUrlState.source
-            );
-            initialSource = exists ? initialUrlState.source : "__DATASET__";
-          } else if (currentDatasetViews.length > 0) {
-            initialSource = getViewCode(currentDatasetViews[0]) || "__DATASET__";
-          }
-          viewSelectEl.value = initialSource;
-          await loadSelectedSource();
-          setLayoutForSelection(true);
-          outputEl.hidden = false;
-          if (initialUrlState && initialUrlState.datasetCode === code) {
-            const state = { ...initialUrlState };
-            initialUrlState = null;
-            applyTableState(state);
-          } else {
-            updatePermalink();
-          }
-          statusEl.textContent = "Načteno " + allDatasets.length + " datových sad.";
-        } catch (error) {
-          currentDataset = previousState.currentDataset;
-          currentDatasetInfo = previousState.currentDatasetInfo;
-          currentDatasetViews = previousState.currentDatasetViews;
-          currentDatasetDetail = previousState.currentDatasetDetail;
-          currentBaseJsonStat = previousState.currentBaseJsonStat;
-          statusEl.textContent =
-            "Nepodařilo se načíst sadu " +
-            code +
-            ". " +
-            (error instanceof Error ? error.message : String(error));
-        }
-      }
-
-      async function loadDatasets() {
-        try {
-          const response = await fetch(KATALOG_ENDPOINT, {
+        const jsonStat = await fetchJsonWithTimeout(
+          viewUrl.toString(),
+          {
             mode: "cors",
             headers: getCommonHeaders()
-          });
-
-          if (!response.ok) {
-            throw new Error("HTTP " + response.status);
-          }
-
-          const data = await response.json();
-          const items = Array.isArray(data) ? data : [];
-          allDatasets = items;
-          indexedDatasets = allDatasets.map((item) => {
-            const label = item?.nazev || item?.kod || "(nepojmenovaná datová sada)";
-            const suffix = item?.kod ? " (" + item.kod + ", v" + (item.verze || "?") + ")" : "";
-            return {
-              item,
-              displayLabel: label + suffix,
-              code: item?.kod || "",
-              version: item?.verze || "",
-              name: item?.nazev || "",
-              normCode: normalizeText(item?.kod || ""),
-              normName: normalizeText(item?.nazev || ""),
-              normCombined: normalizeText((item?.kod || "") + " " + (item?.nazev || ""))
-            };
-          });
-
-          statusEl.textContent =
-            "Načteno " +
-            items.length +
-            " datových sad. Pište pro hledání podřetězcem (bez ohledu na diakritiku).";
-          searchEl.disabled = false;
-          searchEl.value = "";
-          hideDatasetDropdown();
-          setLayoutForSelection(false);
-          if (initialUrlState && initialUrlState.datasetCode) {
-            const match = items.find((item) => {
-              const sameCode = item?.kod === initialUrlState.datasetCode;
-              const sameVersion =
-                !initialUrlState.datasetVersion || item?.verze === initialUrlState.datasetVersion;
-              return sameCode && sameVersion;
-            });
-            if (match) {
-              await loadDatasetData(match);
-              return;
-            }
-          }
-        } catch (error) {
-          statusEl.textContent =
-            "Nepodařilo se načíst datové sady. " +
-            (error instanceof Error ? error.message : String(error));
-          searchEl.disabled = true;
-          hideDatasetDropdown();
-          setLayoutForSelection(false);
-        }
+          },
+          15000,
+          true,
+          "View"
+        );
+        applySourceData(jsonStat);
+        if (tableState) applyTableState(tableState);
+        else updatePermalink();
+        statusEl.textContent = t("loadedDatasets", { count: allDatasets.length });
+      } catch (error) {
+        statusEl.textContent = t("failedLoadSelection", {
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
+    }
 
-      searchEl.addEventListener("input", () => {
+    async function loadDatasetData(dataset) {
+      const code = dataset?.kod;
+      const version = dataset?.verze;
+      const name = dataset?.nazev || code;
+
+      if (!code || !version) return;
+
+      statusEl.textContent = t("loadingDataset", { code });
+      const previousState = {
+        currentDataset,
+        currentDatasetInfo,
+        currentDatasetViews,
+        currentDatasetDetail,
+        currentBaseJsonStat
+      };
+      currentDatasetInfo = { kod: code, verze: version, nazev: name };
+      currentDatasetViews = [];
+      currentDatasetDetail = null;
+      currentBaseJsonStat = null;
+
+      try {
+        const detailUrl = new URL(KATALOG_ENDPOINT + "/" + encodeURIComponent(code));
+        detailUrl.searchParams.set("verze", version);
+        const viewsUrl = new URL(
+          KATALOG_ENDPOINT + "/" + encodeURIComponent(code) + "/vybery"
+        );
+
+        const detailPromise = fetchJsonWithTimeout(
+          detailUrl.toString(),
+          {
+            mode: "cors",
+            headers: getCommonHeaders()
+          },
+          8000,
+          false,
+          "Detail"
+        );
+        const viewsPromise = fetchJsonWithTimeout(
+          viewsUrl.toString(),
+          {
+            mode: "cors",
+            headers: getCommonHeaders()
+          },
+          8000,
+          false,
+          "Views"
+        );
+
+        const [detailMaybe, viewsMaybe] = await Promise.all([
+          detailPromise,
+          viewsPromise
+        ]);
+        const detail = detailMaybe || {};
+        const views = Array.isArray(viewsMaybe) ? viewsMaybe : [];
+        currentDatasetDetail = detail;
+        currentDatasetViews = views;
+
+        datasetTitleEl.textContent = name + " (" + code + ")";
+        populateViewSelect(currentDatasetViews, "__DATASET__");
+        let initialSource = "__DATASET__";
+        if (initialUrlState && initialUrlState.datasetCode === code && initialUrlState.source) {
+          const exists = Array.from(viewSelectEl.options).some(
+            (option) => option.value === initialUrlState.source
+          );
+          initialSource = exists ? initialUrlState.source : "__DATASET__";
+        } else if (currentDatasetViews.length > 0) {
+          initialSource = getViewCode(currentDatasetViews[0]) || "__DATASET__";
+        }
+        viewSelectEl.value = initialSource;
+        await loadSelectedSource();
+        setLayoutForSelection(true);
+        outputEl.hidden = false;
+        if (initialUrlState && initialUrlState.datasetCode === code) {
+          const state = { ...initialUrlState };
+          initialUrlState = null;
+          applyTableState(state);
+        } else {
+          updatePermalink();
+        }
+        statusEl.textContent = t("loadedDatasets", { count: allDatasets.length });
+      } catch (error) {
+        currentDataset = previousState.currentDataset;
+        currentDatasetInfo = previousState.currentDatasetInfo;
+        currentDatasetViews = previousState.currentDatasetViews;
+        currentDatasetDetail = previousState.currentDatasetDetail;
+        currentBaseJsonStat = previousState.currentBaseJsonStat;
+        statusEl.textContent = t("failedLoadDataset", {
+          code,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    async function loadDatasets() {
+      try {
+        const response = await fetch(KATALOG_ENDPOINT, {
+          mode: "cors",
+          headers: getCommonHeaders()
+        });
+
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+        const items = Array.isArray(data) ? data : [];
+        allDatasets = items;
+        indexedDatasets = allDatasets.map((item) => {
+          const label = item?.nazev || item?.kod || t("unnamedDataset");
+          const suffix =
+            item?.kod ? " (" + item.kod + ", " + t("versionShort") + (item.verze || "?") + ")" : "";
+          return {
+            item,
+            displayLabel: label + suffix,
+            code: item?.kod || "",
+            version: item?.verze || "",
+            name: item?.nazev || "",
+            normCode: normalizeText(item?.kod || ""),
+            normName: normalizeText(item?.nazev || ""),
+            normCombined: normalizeText((item?.kod || "") + " " + (item?.nazev || ""))
+          };
+        });
+
+        statusEl.textContent = t("loadedDatasetsHint", { count: items.length });
+        searchEl.disabled = false;
+        searchEl.value = "";
+        hideDatasetDropdown();
+        setLayoutForSelection(false);
+        if (initialUrlState && initialUrlState.datasetCode) {
+          const match = items.find((item) => {
+            const sameCode = item?.kod === initialUrlState.datasetCode;
+            const sameVersion =
+              !initialUrlState.datasetVersion || item?.verze === initialUrlState.datasetVersion;
+            return sameCode && sameVersion;
+          });
+          if (match) {
+            await loadDatasetData(match);
+            return;
+          }
+        }
+      } catch (error) {
+        statusEl.textContent = t("failedLoadDatasets", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        searchEl.disabled = true;
+        hideDatasetDropdown();
+        setLayoutForSelection(false);
+      }
+    }
+
+    searchEl.addEventListener("input", () => {
+      renderDatasetMatches(searchEl.value);
+    });
+
+    searchEl.addEventListener("focus", () => {
+      if (searchEl.value.trim()) {
         renderDatasetMatches(searchEl.value);
-      });
+      }
+    });
 
-      searchEl.addEventListener("focus", () => {
-        if (searchEl.value.trim()) {
+    viewSelectEl.addEventListener("change", () => {
+      loadSelectedSource();
+    });
+
+    permalinkBtnEl.addEventListener("click", () => {
+      copyPermalink();
+    });
+
+    swapAxesBtnEl.addEventListener("click", () => {
+      const currentRow = rowDimensionEl.value;
+      const currentCol = columnDimensionEl.value;
+      if (!currentCol || currentCol === "__NONE__") return;
+      rowDimensionEl.value = currentCol;
+      columnDimensionEl.value = currentRow;
+      syncAxisSelectAvailability();
+      syncFiltersWithAxes();
+      renderTable();
+      updatePermalink();
+    });
+
+    chartZeroAnchorEl.addEventListener("change", () => {
+      if (lastChartData) {
+        renderChartData(lastChartData);
+      }
+    });
+
+    chartStackedBarsEl.addEventListener("change", () => {
+      if (lastChartData) {
+        renderChartData(lastChartData);
+      }
+    });
+
+    chartRelativeBaseEl.addEventListener("change", () => {
+      if (lastChartData) {
+        renderChartData(lastChartData);
+      }
+    });
+
+    langCsBtnEl.addEventListener("click", () => setLanguage("cs"));
+    langEnBtnEl.addEventListener("click", () => setLanguage("en"));
+
+    searchEl.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        if (listEl.hidden && searchEl.value.trim()) {
           renderDatasetMatches(searchEl.value);
         }
-      });
-
-      viewSelectEl.addEventListener("change", () => {
-        loadSelectedSource();
-      });
-
-      permalinkBtnEl.addEventListener("click", () => {
-        copyPermalink();
-      });
-
-      swapAxesBtnEl.addEventListener("click", () => {
-        const currentRow = rowDimensionEl.value;
-        const currentCol = columnDimensionEl.value;
-        if (!currentCol || currentCol === "__NONE__") return;
-        rowDimensionEl.value = currentCol;
-        columnDimensionEl.value = currentRow;
-        syncAxisSelectAvailability();
-        syncFiltersWithAxes();
-        renderTable();
-        updatePermalink();
-      });
-
-      chartZeroAnchorEl.addEventListener("change", () => {
-        if (lastChartData) {
-          renderChartData(lastChartData);
+        if (!listEl.hidden && filteredDatasetMatches.length > 0) {
+          event.preventDefault();
+          setActiveDatasetMatch(activeDatasetMatchIndex + 1);
         }
-      });
+        return;
+      }
 
-      chartStackedBarsEl.addEventListener("change", () => {
-        if (lastChartData) {
-          renderChartData(lastChartData);
+      if (event.key === "ArrowUp") {
+        if (!listEl.hidden && filteredDatasetMatches.length > 0) {
+          event.preventDefault();
+          setActiveDatasetMatch(activeDatasetMatchIndex - 1);
         }
-      });
+        return;
+      }
 
-      chartRelativeBaseEl.addEventListener("change", () => {
-        if (lastChartData) {
-          renderChartData(lastChartData);
+      if (event.key === "Enter") {
+        if (!listEl.hidden && activeDatasetMatchIndex >= 0) {
+          event.preventDefault();
+          selectActiveDatasetMatch();
         }
-      });
+        return;
+      }
 
-      searchEl.addEventListener("keydown", (event) => {
-        if (event.key === "ArrowDown") {
-          if (listEl.hidden && searchEl.value.trim()) {
-            renderDatasetMatches(searchEl.value);
-          }
-          if (!listEl.hidden && filteredDatasetMatches.length > 0) {
-            event.preventDefault();
-            setActiveDatasetMatch(activeDatasetMatchIndex + 1);
-          }
-          return;
-        }
+      if (event.key === "Escape") {
+        hideDatasetDropdown();
+      }
+    });
 
-        if (event.key === "ArrowUp") {
-          if (!listEl.hidden && filteredDatasetMatches.length > 0) {
-            event.preventDefault();
-            setActiveDatasetMatch(activeDatasetMatchIndex - 1);
-          }
-          return;
-        }
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("#dataset-search-row")) {
+        hideDatasetDropdown();
+      }
+    });
 
-        if (event.key === "Enter") {
-          if (!listEl.hidden && activeDatasetMatchIndex >= 0) {
-            event.preventDefault();
-            selectActiveDatasetMatch();
-          }
-          return;
-        }
+    window.addEventListener("resize", () => {
+      positionDatasetDropdown();
+    });
 
-        if (event.key === "Escape") {
-          hideDatasetDropdown();
-        }
-      });
-
-      document.addEventListener("click", (event) => {
-        if (!event.target.closest("#dataset-search-row")) {
-          hideDatasetDropdown();
-        }
-      });
-
-      window.addEventListener("resize", () => {
+    window.addEventListener(
+      "scroll",
+      () => {
         positionDatasetDropdown();
-      });
+      },
+      true
+    );
 
-      window.addEventListener(
-        "scroll",
-        () => {
-          positionDatasetDropdown();
-        },
-        true
-      );
+    applyLanguageUi();
+    loadDatasets();
+  </script>
+</body>
 
-      loadDatasets();
-    </script>
-  </body>
 </html>
