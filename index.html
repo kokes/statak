@@ -232,6 +232,49 @@
         max-width: 100%;
       }
 
+      #chart-section {
+        margin-top: 1rem;
+        padding: 0.85rem;
+        border: 1px solid var(--border);
+        border-radius: var(--ui-radius);
+        background: var(--surface-soft);
+      }
+
+      #chart-title {
+        margin: 0 0 0.5rem;
+        font-weight: 700;
+      }
+
+      #chart-options {
+        margin-bottom: 0.5rem;
+      }
+
+      #chart-options label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.92rem;
+      }
+
+      #chart-canvas-wrap {
+        height: clamp(220px, 38vh, 340px);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      #line-chart {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+
+      #chart-note {
+        margin: 0.45rem 0 0;
+        color: var(--muted);
+      }
+
       table {
         border-collapse: collapse;
         width: max-content;
@@ -309,6 +352,19 @@
             </div>
             <div id="dimension-filters"></div>
           </section>
+          <section id="chart-section" hidden>
+            <p id="chart-title">Graf</p>
+            <div id="chart-options">
+              <label for="chart-zero-anchor">
+                <input id="chart-zero-anchor" type="checkbox" />
+                Ukotvit osu Y na 0
+              </label>
+            </div>
+            <div id="chart-canvas-wrap">
+              <canvas id="line-chart"></canvas>
+            </div>
+            <p id="chart-note"></p>
+          </section>
           <div id="table-container"></div>
           <p id="table-note"></p>
         </section>
@@ -323,6 +379,11 @@
       </main>
     </div>
 
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+      integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+      crossorigin="anonymous"
+    ></script>
     <script>
       const KATALOG_ENDPOINT = "https://data.csu.gov.cz/api/katalog/v1/sady";
       const DOTAZ_BASE = "https://data.csu.gov.cz/api/dotaz/v1";
@@ -338,6 +399,10 @@
       const rowDimensionEl = document.getElementById("row-dimension");
       const columnDimensionEl = document.getElementById("column-dimension");
       const dimensionFiltersEl = document.getElementById("dimension-filters");
+      const chartSectionEl = document.getElementById("chart-section");
+      const chartZeroAnchorEl = document.getElementById("chart-zero-anchor");
+      const lineChartEl = document.getElementById("line-chart");
+      const chartNoteEl = document.getElementById("chart-note");
       const tableContainerEl = document.getElementById("table-container");
       const tableNoteEl = document.getElementById("table-note");
       const MAX_TABLE_CELLS = 5000;
@@ -353,6 +418,118 @@
       let currentBaseJsonStat = null;
       let suppressUrlUpdate = false;
       let initialUrlState = parseUrlState();
+      let chartInstance = null;
+      let lastChartData = null;
+
+      function parseNumericValue(value) {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value !== "string") return null;
+        const normalized = value
+          .trim()
+          .replaceAll("\u00a0", "")
+          .replaceAll(" ", "")
+          .replace(",", ".");
+        const num = Number(normalized);
+        return Number.isFinite(num) ? num : null;
+      }
+
+      function destroyChart() {
+        if (chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+      }
+
+      function hideChart(note) {
+        destroyChart();
+        chartSectionEl.hidden = true;
+        chartNoteEl.textContent = note || "";
+        lastChartData = null;
+      }
+
+      function renderChartData(data) {
+        if (!window.Chart) {
+          hideChart("Chart.js není načten.");
+          return;
+        }
+        const maxSeries = 10;
+        const filtered = (data?.datasets || [])
+          .map((dataset) => ({
+            ...dataset,
+            numericCount: dataset.data.filter((value) => typeof value === "number").length
+          }))
+          .filter((dataset) => dataset.numericCount >= 2)
+          .slice(0, maxSeries);
+
+        if (!data || !Array.isArray(data.labels) || data.labels.length < 2 || filtered.length === 0) {
+          hideChart("Graf není k dispozici pro aktuální výběr.");
+          return;
+        }
+        lastChartData = data;
+        chartSectionEl.hidden = false;
+        chartNoteEl.textContent =
+          "Body: " +
+          data.labels.length +
+          ", série: " +
+          filtered.length +
+          (data.datasets.length > maxSeries ? " (zobrazeno prvních " + maxSeries + ")" : "");
+        destroyChart();
+        const colors = [
+          "#2563eb",
+          "#db2777",
+          "#16a34a",
+          "#d97706",
+          "#7c3aed",
+          "#0891b2",
+          "#ef4444",
+          "#0ea5e9",
+          "#84cc16",
+          "#f97316"
+        ];
+        chartInstance = new Chart(lineChartEl.getContext("2d"), {
+          type: "line",
+          data: {
+            labels: data.labels,
+            datasets: filtered.map((dataset, idx) => ({
+              label: dataset.label,
+              data: dataset.data,
+              borderColor: colors[idx % colors.length],
+              backgroundColor: colors[idx % colors.length],
+              tension: 0.2,
+              spanGaps: true,
+              pointRadius: 2
+            }))
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "nearest", intersect: false },
+            plugins: {
+              legend: {
+                display: true,
+                position: "bottom",
+                onClick(event, legendItem, legend) {
+                  const chart = legend.chart;
+                  const datasetIndex = legendItem.datasetIndex;
+                  if (typeof datasetIndex !== "number") return;
+                  chart.setDatasetVisibility(
+                    datasetIndex,
+                    !chart.isDatasetVisible(datasetIndex)
+                  );
+                  chart.update();
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: chartZeroAnchorEl.checked ? 0 : undefined,
+                ticks: { callback: (v) => Number(v).toLocaleString("cs-CZ") }
+              },
+              x: { ticks: { maxRotation: 45, minRotation: 0 } }
+            }
+          }
+        });
+      }
 
       function setLayoutForSelection(hasSelection) {
         document.body.classList.toggle("has-selection", hasSelection);
@@ -751,6 +928,7 @@
             "Tabulka je příliš velká (" +
             cellCount +
             " buněk). Vyberte dimenze s menším počtem hodnot nebo upravte filtry.";
+          hideChart("Graf je vypnut kvůli velikosti tabulky.");
           return;
         }
 
@@ -772,24 +950,34 @@
 
         const colLabels =
           colDim && colDim !== "__NONE__" ? getDimensionLabels(dimensions[colDim]) : {};
+        const columnDisplayLabels = colCodes.map((colCode) =>
+          colCode === "__VALUE__" ? "Hodnota" : buildDisplayLabel(colCode, colLabels)
+        );
 
-        for (const colCode of colCodes) {
+        for (let i = 0; i < colCodes.length; i++) {
+          const colCode = colCodes[i];
           const th = document.createElement("th");
-          th.textContent =
-            colCode === "__VALUE__" ? "Hodnota" : buildDisplayLabel(colCode, colLabels);
+          th.textContent = columnDisplayLabels[i];
           headRow.appendChild(th);
         }
         thead.appendChild(headRow);
 
         const rowLabels = getDimensionLabels(dimensions[rowDim]);
+        const chartData = {
+          labels: [],
+          datasets: columnDisplayLabels.map((label) => ({ label, data: [] }))
+        };
 
         for (const rowCode of rowCodes) {
           const tr = document.createElement("tr");
           const rowHeader = document.createElement("th");
-          rowHeader.textContent = buildDisplayLabel(rowCode, rowLabels);
+          const rowLabel = buildDisplayLabel(rowCode, rowLabels);
+          rowHeader.textContent = rowLabel;
           tr.appendChild(rowHeader);
+          chartData.labels.push(rowLabel);
 
-          for (const colCode of colCodes) {
+          for (let colIdx = 0; colIdx < colCodes.length; colIdx++) {
+            const colCode = colCodes[colIdx];
             const td = document.createElement("td");
             const indices = [];
             let valid = true;
@@ -818,6 +1006,7 @@
 
             if (!valid) {
               td.textContent = "—";
+              chartData.datasets[colIdx].data.push(null);
             } else {
               let flatIndex = 0;
               for (let i = 0; i < indices.length; i++) {
@@ -825,6 +1014,7 @@
               }
               const value = getValueAt(values, flatIndex);
               td.textContent = value == null ? "" : String(value);
+              chartData.datasets[colIdx].data.push(parseNumericValue(value));
             }
 
             tr.appendChild(td);
@@ -838,6 +1028,7 @@
         tableContainerEl.innerHTML = "";
         tableContainerEl.appendChild(table);
         tableNoteEl.textContent = "";
+        renderChartData(chartData);
       }
 
       function syncFiltersWithAxes() {
@@ -1021,6 +1212,7 @@
         };
 
         tableControlsEl.hidden = false;
+        chartSectionEl.hidden = false;
         syncFiltersWithAxes();
         renderTable();
         updatePermalink();
@@ -1262,6 +1454,12 @@
 
       permalinkBtnEl.addEventListener("click", () => {
         copyPermalink();
+      });
+
+      chartZeroAnchorEl.addEventListener("change", () => {
+        if (lastChartData) {
+          renderChartData(lastChartData);
+        }
       });
 
       searchEl.addEventListener("keydown", (event) => {
