@@ -272,7 +272,12 @@
         margin-right: 0.9rem;
       }
 
+      #chart-options label[hidden] {
+        display: none !important;
+      }
+
       #chart-canvas-wrap {
+        position: relative;
         height: clamp(220px, 38vh, 340px);
         background: var(--card);
         border: 1px solid var(--border);
@@ -284,6 +289,26 @@
         width: 100% !important;
         height: 100% !important;
         display: block;
+      }
+
+      #line-chart[hidden] {
+        display: none !important;
+      }
+
+      #chart-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0.8rem;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      #chart-placeholder[hidden] {
+        display: none !important;
       }
 
       #chart-note {
@@ -380,11 +405,12 @@
               </label>
               <label id="chart-stacked-option" for="chart-stacked-bars" hidden>
                 <input id="chart-stacked-bars" type="checkbox" />
-                Skládané sloupce
+                Skládat série
               </label>
             </div>
             <div id="chart-canvas-wrap">
               <canvas id="line-chart"></canvas>
+              <div id="chart-placeholder" hidden>Graf není k dispozici pro aktuální výběr.</div>
             </div>
             <p id="chart-note"></p>
           </section>
@@ -429,6 +455,7 @@
       const chartStackedOptionEl = document.getElementById("chart-stacked-option");
       const chartStackedBarsEl = document.getElementById("chart-stacked-bars");
       const lineChartEl = document.getElementById("line-chart");
+      const chartPlaceholderEl = document.getElementById("chart-placeholder");
       const chartNoteEl = document.getElementById("chart-note");
       const tableContainerEl = document.getElementById("table-container");
       const tableNoteEl = document.getElementById("table-note");
@@ -469,10 +496,13 @@
 
       function hideChart(note) {
         destroyChart();
-        chartSectionEl.hidden = true;
+        chartSectionEl.hidden = false;
         chartTitleEl.textContent = "Graf";
         chartStackedOptionEl.hidden = true;
-        chartNoteEl.textContent = note || "";
+        lineChartEl.hidden = true;
+        chartPlaceholderEl.hidden = false;
+        chartPlaceholderEl.textContent = note || "Graf není k dispozici pro aktuální výběr.";
+        chartNoteEl.textContent = "";
         lastChartData = null;
       }
 
@@ -507,10 +537,12 @@
         // X osa = řádky tabulky. Line chart dává smysl jen pro spojitou číselnou osu.
         const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
         const chartType = xAxisContinuous ? "line" : "bar";
-        const isStackedBar = chartType === "bar" && chartStackedBarsEl.checked;
+        const isStacked = chartStackedBarsEl.checked;
         lastChartData = data;
         chartSectionEl.hidden = false;
-        chartStackedOptionEl.hidden = chartType !== "bar";
+        lineChartEl.hidden = false;
+        chartPlaceholderEl.hidden = true;
+        chartStackedOptionEl.hidden = chartType !== "bar" && chartType !== "line";
         chartTitleEl.textContent = data.colDimLabel
           ? "Graf: " + data.rowDimLabel + " × " + data.colDimLabel
           : "Graf: " + data.rowDimLabel;
@@ -545,7 +577,8 @@
               tension: chartType === "line" ? 0.2 : 0,
               spanGaps: chartType === "line",
               pointRadius: chartType === "line" ? 2 : 0,
-              borderWidth: chartType === "bar" ? 1 : 2
+              borderWidth: chartType === "bar" ? 1 : 2,
+              fill: chartType === "line" ? isStacked : false
             }))
           },
           options: {
@@ -570,12 +603,12 @@
             },
             scales: {
               y: {
-                stacked: isStackedBar,
+                stacked: isStacked,
                 min: chartZeroAnchorEl.checked ? 0 : undefined,
                 ticks: { callback: (v) => Number(v).toLocaleString("cs-CZ") }
               },
               x: {
-                stacked: isStackedBar,
+                stacked: isStacked,
                 ticks: { maxRotation: 45, minRotation: 0 }
               }
             }
