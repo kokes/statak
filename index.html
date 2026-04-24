@@ -588,7 +588,7 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: "nearest", intersect: false },
+            interaction: { mode: "index", intersect: false },
             plugins: {
               legend: {
                 display: true,
@@ -603,6 +603,10 @@
                   );
                   chart.update();
                 }
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false
               }
             },
             scales: {
@@ -1165,11 +1169,19 @@
             selectEl.multiple = true;
             selectEl.size = Math.min(Math.max(codes.length, 3), 8);
             const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
-            if (allOption) allOption.selected = false;
             if (!selectedCodes.length) {
-              for (const option of selectEl.options) {
-                option.selected = codes.includes(option.value);
+              if (allOption) {
+                allOption.selected = true;
+                for (const option of selectEl.options) {
+                  if (option.value !== "__ALL__") option.selected = false;
+                }
+              } else {
+                for (const option of selectEl.options) {
+                  option.selected = codes.includes(option.value);
+                }
               }
+            } else if (allOption) {
+              allOption.selected = false;
             }
           } else {
             selectEl.multiple = false;
@@ -1242,9 +1254,10 @@
               if (shouldSelect) selectedCount++;
             }
             if (selectedCount === 0) {
-              for (const option of filterEl.options) {
-                if (option.value !== "__ALL__") option.selected = true;
-              }
+              const allOption = Array.from(filterEl.options).find(
+                (option) => option.value === "__ALL__"
+              );
+              if (allOption) allOption.selected = true;
             }
           } else {
             const hasOption = Array.from(filterEl.options).some((option) => option.value === value);
