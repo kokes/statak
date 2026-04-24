@@ -646,6 +646,7 @@
     let chartInstance = null;
     let lastChartData = null;
     let chartSeriesVisibility = {};
+    let lastAllSelectionState = {};
     let currentLang = detectInitialLang();
 
     function t(key, vars) {
@@ -952,7 +953,10 @@
             const hasAllSelected = Array.from(filterEl.selectedOptions || []).some(
               (option) => option.value === "__ALL__"
             );
-            if (hasAllSelected) continue;
+            if (hasAllSelected) {
+              filters[dimId] = "__ALL__";
+              continue;
+            }
             const selected = getConcreteSelectedCodes(filterEl, dimId);
             const allCodes = currentDataset.dimensionCodes[dimId] || [];
             if (!selected.length || selected.length === allCodes.length) continue;
@@ -1007,14 +1011,27 @@
       if (!selectEl?.multiple) return;
       const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
       if (!allOption) return;
+      const selectKey = selectEl.id || "";
+      const wasAllSelected = !!lastAllSelectionState[selectKey];
       const concreteSelected = Array.from(selectEl.selectedOptions || []).filter(
         (option) => option.value !== "__ALL__"
       );
+
       if (allOption.selected && concreteSelected.length > 0) {
-        allOption.selected = false;
+        if (wasAllSelected) {
+          // User is moving from "(all)" to specific values.
+          allOption.selected = false;
+        } else {
+          // User selected "(all)" now - make it exclusive.
+          for (const option of selectEl.options) {
+            if (option.value !== "__ALL__") option.selected = false;
+          }
+        }
       } else if (!allOption.selected && concreteSelected.length === 0) {
         allOption.selected = true;
       }
+
+      lastAllSelectionState[selectKey] = allOption.selected;
     }
 
     async function copyPermalink() {
@@ -1560,6 +1577,13 @@
       for (const [dimId, value] of Object.entries(filters)) {
         const filterEl = document.getElementById("filter-" + dimId);
         if (!filterEl) continue;
+          if (value === "__ALL__" && filterEl.multiple) {
+            for (const option of filterEl.options) {
+              option.selected = option.value === "__ALL__";
+            }
+            normalizeMultiSelectState(filterEl);
+            continue;
+          }
         if (Array.isArray(value) && filterEl.multiple) {
           const selectedSet = new Set(value.map(String));
           let selectedCount = 0;
@@ -1579,6 +1603,23 @@
           if (hasOption) filterEl.value = value;
         }
       }
+
+      // If an axis filter is not explicitly present in URL state, keep it on "(all)".
+      const rowDim = rowDimensionEl.value;
+      const colDim = columnDimensionEl.value;
+      for (const axisDim of [rowDim, colDim]) {
+        if (!axisDim || axisDim === "__NONE__") continue;
+        if (Object.prototype.hasOwnProperty.call(filters, axisDim)) continue;
+        const filterEl = document.getElementById("filter-" + axisDim);
+        if (!filterEl || !filterEl.multiple) continue;
+        const allOption = Array.from(filterEl.options).find((option) => option.value === "__ALL__");
+        if (!allOption) continue;
+        for (const option of filterEl.options) {
+          option.selected = option.value === "__ALL__";
+        }
+        normalizeMultiSelectState(filterEl);
+      }
+
       renderTable();
       suppressUrlUpdate = false;
       updatePermalink();
