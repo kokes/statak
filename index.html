@@ -794,6 +794,8 @@
       if (isStacked) chartZeroAnchorEl.checked = true;
       chartZeroAnchorEl.disabled = isStacked;
       const shouldAnchorAtZero = isStacked || chartZeroAnchorEl.checked;
+      const interactionMode = chartType === "line" ? "index" : "nearest";
+      const interactionIntersect = chartType === "line" ? false : true;
       lastChartData = data;
       chartSectionEl.hidden = false;
       lineChartEl.hidden = false;
@@ -870,7 +872,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: { mode: "index", intersect: false },
+          interaction: { mode: interactionMode, intersect: interactionIntersect },
           plugins: {
             legend: {
               display: true,
@@ -906,8 +908,8 @@
               }
             },
             tooltip: {
-              mode: "index",
-              intersect: false
+              mode: interactionMode,
+              intersect: interactionIntersect
             }
           },
           scales: {
