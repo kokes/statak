@@ -499,6 +499,7 @@
         chartSectionEl.hidden = false;
         chartTitleEl.textContent = "Graf";
         chartStackedOptionEl.hidden = true;
+        chartZeroAnchorEl.disabled = false;
         lineChartEl.hidden = true;
         chartPlaceholderEl.hidden = false;
         chartPlaceholderEl.textContent = note || "Graf není k dispozici pro aktuální výběr.";
@@ -538,6 +539,9 @@
         const xAxisContinuous = isContinuousNumericAxis(data.labels, data.rowCodes);
         const chartType = xAxisContinuous ? "line" : "bar";
         const isStacked = chartStackedBarsEl.checked;
+        if (isStacked) chartZeroAnchorEl.checked = true;
+        chartZeroAnchorEl.disabled = isStacked;
+        const shouldAnchorAtZero = isStacked || chartZeroAnchorEl.checked;
         lastChartData = data;
         chartSectionEl.hidden = false;
         lineChartEl.hidden = false;
@@ -554,16 +558,16 @@
           (data.datasets.length > maxSeries ? " (zobrazeno prvních " + maxSeries + ")" : "");
         destroyChart();
         const colors = [
-          "#2563eb",
-          "#db2777",
-          "#16a34a",
-          "#d97706",
-          "#7c3aed",
-          "#0891b2",
-          "#ef4444",
-          "#0ea5e9",
-          "#84cc16",
-          "#f97316"
+          "#4e79a7",
+          "#f28e2b",
+          "#59a14f",
+          "#e15759",
+          "#76b7b2",
+          "#edc948",
+          "#b07aa1",
+          "#ff9da7",
+          "#9c755f",
+          "#bab0ab"
         ];
         chartInstance = new Chart(lineChartEl.getContext("2d"), {
           type: chartType,
@@ -604,7 +608,7 @@
             scales: {
               y: {
                 stacked: isStacked,
-                min: chartZeroAnchorEl.checked ? 0 : undefined,
+                min: shouldAnchorAtZero ? 0 : undefined,
                 ticks: { callback: (v) => Number(v).toLocaleString("cs-CZ") }
               },
               x: {
