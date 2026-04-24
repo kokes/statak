@@ -1258,11 +1258,12 @@
           const selectedCodes = getConcreteSelectedCodes(selectEl, dimId);
 
           const isAxis = dimId === rowDim || (colDim !== "__NONE__" && dimId === colDim);
+          const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
           if (isAxis) {
             selectEl.disabled = false;
             selectEl.multiple = true;
             selectEl.size = Math.min(Math.max(codes.length, 3), 8);
-            const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
+            if (allOption) allOption.disabled = false;
             if (!selectedCodes.length) {
               if (allOption) {
                 allOption.selected = true;
@@ -1280,10 +1281,11 @@
           } else {
             selectEl.multiple = false;
             selectEl.size = 1;
+            if (allOption) allOption.disabled = true;
             if (selectedCodes.length) {
               selectEl.value = selectedCodes[0];
             } else if (selectEl.value === "__ALL__") {
-              const firstCode = currentDataset.dimensionCodes[dimId]?.[0] || "";
+              const firstCode = codes[0] || "";
               selectEl.value = firstCode;
             }
           }
