@@ -747,6 +747,10 @@
             const filterEl = document.getElementById("filter-" + dimId);
             if (!filterEl) continue;
             if (filterEl.multiple) {
+              const hasAllSelected = Array.from(filterEl.selectedOptions || []).some(
+                (option) => option.value === "__ALL__"
+              );
+              if (hasAllSelected) continue;
               const selected = getConcreteSelectedCodes(filterEl, dimId);
               const allCodes = currentDataset.dimensionCodes[dimId] || [];
               if (!selected.length || selected.length === allCodes.length) continue;
@@ -795,6 +799,20 @@
         const filterEl = document.getElementById("filter-" + dimId);
         const selected = getConcreteSelectedCodes(filterEl, dimId);
         return selected.length ? selected : allCodes;
+      }
+
+      function normalizeMultiSelectState(selectEl) {
+        if (!selectEl?.multiple) return;
+        const allOption = Array.from(selectEl.options).find((option) => option.value === "__ALL__");
+        if (!allOption) return;
+        const concreteSelected = Array.from(selectEl.selectedOptions || []).filter(
+          (option) => option.value !== "__ALL__"
+        );
+        if (allOption.selected && concreteSelected.length > 0) {
+          allOption.selected = false;
+        } else if (!allOption.selected && concreteSelected.length === 0) {
+          allOption.selected = true;
+        }
       }
 
       async function copyPermalink() {
@@ -1278,6 +1296,7 @@
             } else if (allOption) {
               allOption.selected = false;
             }
+            normalizeMultiSelectState(selectEl);
           } else {
             selectEl.multiple = false;
             selectEl.size = 1;
@@ -1450,6 +1469,7 @@
           dimensionFiltersEl.appendChild(row);
 
           select.addEventListener("change", () => {
+            normalizeMultiSelectState(select);
             renderTable();
             updatePermalink();
           });
