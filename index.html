@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Datasets (v1/sady)</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        margin: 2rem;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      #status {
+        margin: 0.5rem 0 1rem;
+      }
+
+      #datasets li {
+        margin: 0.2rem 0;
+      }
+
+      button.dataset-btn {
+        font: inherit;
+      }
+
+      #dataset-output {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid currentColor;
+      }
+
+      #dataset-meta {
+        margin: 0.6rem 0;
+      }
+
+      #dataset-dimensions {
+        margin: 0.4rem 0 0;
+      }
+
+      #dataset-howto {
+        margin: 0.7rem 0;
+      }
+
+      #table-controls {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        border: 1px solid currentColor;
+      }
+
+      #table-controls .control-row {
+        margin: 0.4rem 0;
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      #table-controls label {
+        font-weight: 600;
+      }
+
+      #table-container {
+        margin-top: 1rem;
+        overflow: auto;
+        max-width: 100%;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: max-content;
+        min-width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid currentColor;
+        padding: 0.35rem 0.5rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+
+      #table-note {
+        margin: 0.5rem 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Datasets from <code>v1/sady</code></h1>
+    <p id="status">Loading…</p>
+    <ul id="datasets"></ul>
+    <section id="dataset-output" hidden>
+      <h2 id="dataset-title"></h2>
+      <p id="dataset-meta"></p>
+      <p id="dataset-howto"></p>
+      <ul id="dataset-dimensions"></ul>
+      <section id="table-controls" hidden>
+        <div class="control-row">
+          <label for="row-dimension">Rows:</label>
+          <select id="row-dimension"></select>
+          <label for="column-dimension">Columns:</label>
+          <select id="column-dimension"></select>
+        </div>
+        <div id="dimension-filters"></div>
+      </section>
+      <div id="table-container"></div>
+      <p id="table-note"></p>
+    </section>
+
+    <script>
+      const KATALOG_ENDPOINT = "https://data.csu.gov.cz/api/katalog/v1/sady";
+      const DOTAZ_BASE = "https://data.csu.gov.cz/api/dotaz/v1";
+      const statusEl = document.getElementById("status");
+      const listEl = document.getElementById("datasets");
+      const outputEl = document.getElementById("dataset-output");
+      const datasetTitleEl = document.getElementById("dataset-title");
+      const datasetMetaEl = document.getElementById("dataset-meta");
+      const datasetHowToEl = document.getElementById("dataset-howto");
+      const datasetDimensionsEl = document.getElementById("dataset-dimensions");
+      const tableControlsEl = document.getElementById("table-controls");
+      const rowDimensionEl = document.getElementById("row-dimension");
+      const columnDimensionEl = document.getElementById("column-dimension");
+      const dimensionFiltersEl = document.getElementById("dimension-filters");
+      const tableContainerEl = document.getElementById("table-container");
+      const tableNoteEl = document.getElementById("table-note");
+      const MAX_TABLE_CELLS = 5000;
+      let currentDataset = null;
+
+      function getCommonHeaders() {
+        return {
+          Accept: "application/json",
+          "Accept-Language": "cs"
+        };
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      function product(values) {
+        if (!Array.isArray(values) || values.length === 0) return 0;
+        return values.reduce((acc, value) => acc * Number(value || 0), 1);
+      }
+
+      function getDimensionItemCodes(dimension) {
+        const index = dimension?.category?.index;
+        if (Array.isArray(index)) return index;
+        if (index && typeof index === "object") return Object.keys(index);
+        return [];
+      }
+
+      function getDimensionLabels(dimension) {
+        return dimension?.category?.label && typeof dimension.category.label === "object"
+          ? dimension.category.label
+          : {};
+      }
+
+      function createSelectOptions(selectEl, options) {
+        selectEl.innerHTML = "";
+        for (const option of options) {
+          const opt = document.createElement("option");
+          opt.value = option.value;
+          opt.textContent = option.label;
+          selectEl.appendChild(opt);
+        }
+      }
+
+      function getStrides(size) {
+        if (!Array.isArray(size) || size.length === 0) return [];
+        const strides = new Array(size.length).fill(1);
+        for (let i = size.length - 2; i >= 0; i--) {
+          strides[i] = strides[i + 1] * Number(size[i + 1] || 1);
+        }
+        return strides;
+      }
+
+      function getValueAt(values, index) {
+        if (Array.isArray(values)) return values[index] ?? null;
+        if (values && typeof values === "object") {
+          const key = String(index);
+          return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
+        }
+        return null;
+      }
+
+      function buildDisplayLabel(code, labels) {
+        const name = labels?.[code];
+        if (!name) return code;
+        if (String(name).trim() === String(code).trim()) return code;
+        return code + " - " + name;
+      }
+
+      function getDimensionDisplayName(dimId, dimensionNames) {
+        const name = dimensionNames?.[dimId];
+        return name ? name + " (" + dimId + ")" : dimId;
+      }
+
+      function renderTable() {
+        if (!currentDataset) return;
+
+        const {
+          dimensionIds,
+          dimensions,
+          values,
+          size,
+          strides,
+          codeToPosition,
+          dimensionNames
+        } = currentDataset;
+        const rowDim = rowDimensionEl.value;
+        const colDim = columnDimensionEl.value;
+
+        if (!rowDim || !codeToPosition[rowDim]) return;
+
+        const rowCodes = currentDataset.dimensionCodes[rowDim] || [];
+        const colCodes =
+          colDim && colDim !== "__NONE__" ? currentDataset.dimensionCodes[colDim] || [] : ["__VALUE__"];
+        const cellCount = rowCodes.length * colCodes.length;
+
+        if (cellCount > MAX_TABLE_CELLS) {
+          tableContainerEl.innerHTML = "";
+          tableNoteEl.textContent =
+            "Table too large (" +
+            cellCount +
+            " cells). Pick dimensions with fewer values or change filters.";
+          return;
+        }
+
+        const selectedFilters = {};
+        for (const dimId of dimensionIds) {
+          const filterEl = document.getElementById("filter-" + dimId);
+          if (!filterEl) continue;
+          selectedFilters[dimId] = filterEl.value;
+        }
+
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const tbody = document.createElement("tbody");
+
+        const headRow = document.createElement("tr");
+        const corner = document.createElement("th");
+        corner.textContent = getDimensionDisplayName(rowDim, dimensionNames);
+        headRow.appendChild(corner);
+
+        const colLabels =
+          colDim && colDim !== "__NONE__" ? getDimensionLabels(dimensions[colDim]) : {};
+
+        for (const colCode of colCodes) {
+          const th = document.createElement("th");
+          th.textContent =
+            colCode === "__VALUE__" ? "Hodnota" : buildDisplayLabel(colCode, colLabels);
+          headRow.appendChild(th);
+        }
+        thead.appendChild(headRow);
+
+        const rowLabels = getDimensionLabels(dimensions[rowDim]);
+
+        for (const rowCode of rowCodes) {
+          const tr = document.createElement("tr");
+          const rowHeader = document.createElement("th");
+          rowHeader.textContent = buildDisplayLabel(rowCode, rowLabels);
+          tr.appendChild(rowHeader);
+
+          for (const colCode of colCodes) {
+            const td = document.createElement("td");
+            const indices = [];
+            let valid = true;
+
+            for (let i = 0; i < dimensionIds.length; i++) {
+              const dimId = dimensionIds[i];
+              let code;
+
+              if (dimId === rowDim) code = rowCode;
+              else if (colDim !== "__NONE__" && dimId === colDim) code = colCode;
+              else code = selectedFilters[dimId];
+
+              const pos = codeToPosition[dimId]?.[code];
+              if (typeof pos !== "number") {
+                valid = false;
+                break;
+              }
+              indices[i] = pos;
+            }
+
+            if (!valid) {
+              td.textContent = "-";
+            } else {
+              let flatIndex = 0;
+              for (let i = 0; i < indices.length; i++) {
+                flatIndex += indices[i] * strides[i];
+              }
+              const value = getValueAt(values, flatIndex);
+              td.textContent = value == null ? "" : String(value);
+            }
+
+            tr.appendChild(td);
+          }
+
+          tbody.appendChild(tr);
+        }
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableContainerEl.innerHTML = "";
+        tableContainerEl.appendChild(table);
+        tableNoteEl.textContent =
+          "Live view: " +
+          rowCodes.length +
+          " x " +
+          colCodes.length +
+          " values.";
+      }
+
+      function syncFiltersWithAxes() {
+        const rowDim = rowDimensionEl.value;
+        const colDim = columnDimensionEl.value;
+
+        for (const dimId of currentDataset.dimensionIds) {
+          const selectEl = document.getElementById("filter-" + dimId);
+          if (!selectEl) continue;
+
+          const isAxis = dimId === rowDim || (colDim !== "__NONE__" && dimId === colDim);
+          selectEl.disabled = isAxis;
+
+          if (isAxis) {
+            selectEl.value = "__ALL__";
+          } else if (selectEl.value === "__ALL__") {
+            const firstCode = currentDataset.dimensionCodes[dimId]?.[0] || "";
+            selectEl.value = firstCode;
+          }
+        }
+      }
+
+      function setupTableUi(jsonStat, dimensionNames) {
+        const dimensionIds = Array.isArray(jsonStat?.id)
+          ? jsonStat.id
+          : Object.keys(jsonStat?.dimension || {});
+        const dimensions = jsonStat?.dimension || {};
+        const values = jsonStat?.value;
+        const size = Array.isArray(jsonStat?.size) ? jsonStat.size : [];
+        const strides = getStrides(size);
+        const dimensionCodes = {};
+        const codeToPosition = {};
+
+        for (const dimId of dimensionIds) {
+          const dim = dimensions[dimId];
+          const codes = getDimensionItemCodes(dim);
+          dimensionCodes[dimId] = codes;
+          codeToPosition[dimId] = {};
+          codes.forEach((code, index) => {
+            codeToPosition[dimId][code] = index;
+          });
+        }
+
+        currentDataset = {
+          dimensionIds,
+          dimensions,
+          values,
+          size,
+          strides,
+          dimensionCodes,
+          codeToPosition,
+          dimensionNames
+        };
+
+        const rowOptions = dimensionIds.map((dimId) => ({
+          value: dimId,
+          label: getDimensionDisplayName(dimId, dimensionNames)
+        }));
+        createSelectOptions(rowDimensionEl, rowOptions);
+
+        const colOptions = [{ value: "__NONE__", label: "(none)" }].concat(
+          dimensionIds.map((dimId) => ({
+            value: dimId,
+            label: getDimensionDisplayName(dimId, dimensionNames)
+          }))
+        );
+        createSelectOptions(columnDimensionEl, colOptions);
+
+        rowDimensionEl.value = dimensionIds[0] || "";
+        columnDimensionEl.value = dimensionIds[1] || "__NONE__";
+
+        dimensionFiltersEl.innerHTML = "";
+        for (const dimId of dimensionIds) {
+          const row = document.createElement("div");
+          row.className = "control-row";
+
+          const label = document.createElement("label");
+          label.htmlFor = "filter-" + dimId;
+          label.textContent = getDimensionDisplayName(dimId, dimensionNames) + ":";
+
+          const select = document.createElement("select");
+          select.id = "filter-" + dimId;
+          const labels = getDimensionLabels(dimensions[dimId]);
+          const codes = dimensionCodes[dimId] || [];
+          const options = [{ value: "__ALL__", label: "(all)" }].concat(
+            codes.map((code) => ({
+              value: code,
+              label: buildDisplayLabel(code, labels)
+            }))
+          );
+          createSelectOptions(select, options);
+
+          row.appendChild(label);
+          row.appendChild(select);
+          dimensionFiltersEl.appendChild(row);
+
+          select.addEventListener("change", () => {
+            renderTable();
+          });
+        }
+
+        rowDimensionEl.onchange = () => {
+          if (rowDimensionEl.value === columnDimensionEl.value) {
+            columnDimensionEl.value = "__NONE__";
+          }
+          syncFiltersWithAxes();
+          renderTable();
+        };
+
+        columnDimensionEl.onchange = () => {
+          if (rowDimensionEl.value === columnDimensionEl.value) {
+            columnDimensionEl.value = "__NONE__";
+          }
+          syncFiltersWithAxes();
+          renderTable();
+        };
+
+        tableControlsEl.hidden = false;
+        syncFiltersWithAxes();
+        renderTable();
+      }
+
+      async function loadDatasetData(dataset) {
+        const code = dataset?.kod;
+        const version = dataset?.verze;
+        const name = dataset?.nazev || code;
+
+        if (!code || !version) return;
+
+        outputEl.hidden = false;
+        datasetTitleEl.textContent = "Loading: " + name;
+        datasetMetaEl.textContent = "";
+        datasetHowToEl.textContent = "";
+        datasetDimensionsEl.innerHTML = "";
+        tableControlsEl.hidden = true;
+        tableContainerEl.innerHTML = "";
+        tableNoteEl.textContent = "";
+        currentDataset = null;
+
+        try {
+          const dataUrl = new URL(DOTAZ_BASE + "/data/sady/" + encodeURIComponent(code));
+          dataUrl.searchParams.set("verze", version);
+          dataUrl.searchParams.set("format", "JSON_STAT");
+          dataUrl.searchParams.set("rozsah", "CELY_VYBER");
+          dataUrl.searchParams.set("poznamky", "false");
+
+          const detailUrl = new URL(KATALOG_ENDPOINT + "/" + encodeURIComponent(code));
+          detailUrl.searchParams.set("verze", version);
+
+          const [dataResponse, detailResponse] = await Promise.all([
+            fetch(dataUrl.toString(), {
+              mode: "cors",
+              headers: getCommonHeaders()
+            }),
+            fetch(detailUrl.toString(), {
+              mode: "cors",
+              headers: getCommonHeaders()
+            })
+          ]);
+
+          if (!dataResponse.ok) throw new Error("Data HTTP " + dataResponse.status);
+          if (!detailResponse.ok) throw new Error("Detail HTTP " + detailResponse.status);
+
+          const [jsonStat, detail] = await Promise.all([
+            dataResponse.json(),
+            detailResponse.json()
+          ]);
+          const dimensionIds = Array.isArray(jsonStat?.id)
+            ? jsonStat.id
+            : Object.keys(jsonStat?.dimension || {});
+          const dimensions = jsonStat?.dimension || {};
+          const observationCount = product(jsonStat?.size);
+          const indicatorCodes = Array.isArray(detail?.ukazatele)
+            ? detail.ukazatele.map((u) => u?.kod).filter(Boolean)
+            : [];
+          const requiredDimTypes = Array.isArray(detail?.pravidlaVyberu?.povinneDimenze)
+            ? detail.pravidlaVyberu.povinneDimenze
+            : [];
+          const variantMap = Array.isArray(detail?.variantyDimenze) ? detail.variantyDimenze : [];
+          const dimensionNames = {};
+          const variantNameByCode = Object.fromEntries(
+            variantMap
+              .filter((variant) => variant?.kod)
+              .map((variant) => [variant.kod, variant.nazev || ""])
+          );
+
+          for (const dimId of dimensionIds) {
+            const jsonStatLabel = dimensions?.[dimId]?.label || "";
+            dimensionNames[dimId] = variantNameByCode[dimId] || jsonStatLabel || "";
+          }
+
+          datasetTitleEl.textContent = name + " (" + code + ")";
+          datasetMetaEl.textContent =
+            "Observations: " +
+            observationCount +
+            ". Dimensions: " +
+            dimensionIds.length +
+            ".";
+          datasetHowToEl.textContent =
+            "For 1 value use /data/sady/{sadaKod}/hodnoty/{ukazatelKod} with kodyDimenzi + kodyPolozek. " +
+            "Pick ukazatelKod from this dataset, then pick dimension item codes from /katalog/v1/dimenze/{kod}/polozky.";
+
+          for (const dimId of dimensionIds) {
+            const dim = dimensions[dimId];
+            const itemCodes = getDimensionItemCodes(dim);
+            const sample = itemCodes.slice(0, 8);
+            const sampleText = sample.length > 0 ? sample.join(", ") : "n/a";
+            const hasMore = itemCodes.length > sample.length ? ", ..." : "";
+
+            const li = document.createElement("li");
+            li.innerHTML =
+              "<strong>" +
+              escapeHtml(dimId) +
+              "</strong>: " +
+              itemCodes.length +
+              " values (sample: " +
+              escapeHtml(sampleText + hasMore) +
+              ")";
+            datasetDimensionsEl.appendChild(li);
+          }
+
+          if (indicatorCodes.length > 0) {
+            const li = document.createElement("li");
+            li.innerHTML =
+              "<strong>Ukazatele (kody)</strong>: " +
+              escapeHtml(indicatorCodes.slice(0, 10).join(", ")) +
+              (indicatorCodes.length > 10 ? ", ..." : "");
+            datasetDimensionsEl.appendChild(li);
+          }
+
+          if (requiredDimTypes.length > 0) {
+            const li = document.createElement("li");
+            li.innerHTML =
+              "<strong>Povinne typy dimenzi</strong>: " +
+              escapeHtml(requiredDimTypes.join(", "));
+            datasetDimensionsEl.appendChild(li);
+          }
+
+          if (variantMap.length > 0) {
+            const li = document.createElement("li");
+            li.innerHTML =
+              "<strong>Varianty dimenzi (kod - typ)</strong>: " +
+              escapeHtml(
+                variantMap
+                  .slice(0, 12)
+                  .map((variant) => (variant?.kod || "?") + " - " + (variant?.typDimenzeKod || "?"))
+                  .join(", ")
+              ) +
+              (variantMap.length > 12 ? ", ..." : "");
+            datasetDimensionsEl.appendChild(li);
+          }
+
+          setupTableUi(jsonStat, dimensionNames);
+        } catch (error) {
+          datasetTitleEl.textContent = name + " (" + code + ")";
+          datasetMetaEl.textContent =
+            "Failed to load dataset data. " +
+            (error instanceof Error ? error.message : String(error));
+          datasetHowToEl.textContent = "";
+          datasetDimensionsEl.innerHTML = "";
+          tableControlsEl.hidden = true;
+          tableContainerEl.innerHTML = "";
+          tableNoteEl.textContent = "";
+          currentDataset = null;
+        }
+      }
+
+      async function loadDatasets() {
+        try {
+          const response = await fetch(KATALOG_ENDPOINT, {
+            mode: "cors",
+            headers: getCommonHeaders()
+          });
+
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+
+          const data = await response.json();
+          const items = Array.isArray(data) ? data : [];
+
+          statusEl.textContent = "Loaded " + items.length + " datasets.";
+          listEl.innerHTML = "";
+
+          for (const item of items) {
+            const li = document.createElement("li");
+            const button = document.createElement("button");
+            button.className = "dataset-btn";
+            button.type = "button";
+            const label = item?.nazev || item?.kod || "(unnamed dataset)";
+            const id = item?.kod ? " (" + item.kod + ", v" + (item.verze || "?") + ")" : "";
+            button.textContent = label + id;
+            button.addEventListener("click", () => {
+              loadDatasetData(item);
+            });
+            li.appendChild(button);
+            listEl.appendChild(li);
+          }
+        } catch (error) {
+          statusEl.textContent =
+            "Failed to load datasets. " +
+            (error instanceof Error ? error.message : String(error));
+        }
+      }
+
+      loadDatasets();
+    </script>
+  </body>
+</html>
