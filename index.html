@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="cs">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Datasets (v1/sady)</title>
+    <title>Datové sady (v1/sady)</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -11,7 +11,41 @@
 
       body {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        margin: 2rem;
+        margin: 0;
+      }
+
+      #app-shell {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+
+      #app {
+        width: min(1100px, 100%);
+      }
+
+      body.is-centered #app-shell {
+        align-items: center;
+      }
+
+      body.has-selection #app-shell {
+        align-items: flex-start;
+      }
+
+      body.is-centered #app {
+        width: min(760px, 100%);
+        margin-top: -6vh;
+      }
+
+      body.is-centered h1,
+      body.is-centered #status {
+        text-align: center;
+      }
+
+      body.has-selection #app {
+        margin-top: 0;
       }
 
       h1 {
@@ -22,30 +56,71 @@
         margin: 0.5rem 0 1rem;
       }
 
+      #dataset-search-row {
+        margin: 0 0 1rem;
+        position: relative;
+        width: min(42rem, 100%);
+      }
+
+      #dataset-search {
+        font: inherit;
+        width: 100%;
+        padding: 0.35rem 0.5rem;
+      }
+
+      #datasets {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0;
+        margin: 0;
+        padding: 0.35rem;
+        list-style: none;
+        border: 1px solid currentColor;
+        background: Canvas;
+        z-index: 20;
+        max-height: min(18rem, 45vh);
+        overflow: auto;
+        box-sizing: border-box;
+      }
+
       #datasets li {
-        margin: 0.2rem 0;
+        margin: 0;
       }
 
       button.dataset-btn {
         font: inherit;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        padding: 0.45rem 0.55rem;
+        border-radius: 0.4rem;
+        cursor: pointer;
+      }
+
+      button.dataset-btn:hover,
+      button.dataset-btn.is-active {
+        background: color-mix(in oklab, CanvasText 14%, Canvas);
+      }
+
+      .dataset-btn-title {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dataset-btn-meta {
+        display: block;
+        font-size: 0.85em;
+        opacity: 0.75;
       }
 
       #dataset-output {
         margin-top: 1.5rem;
         padding-top: 1rem;
         border-top: 1px solid currentColor;
-      }
-
-      #dataset-meta {
-        margin: 0.6rem 0;
-      }
-
-      #dataset-dimensions {
-        margin: 0.4rem 0 0;
-      }
-
-      #dataset-howto {
-        margin: 0.7rem 0;
       }
 
       #table-controls {
@@ -94,41 +169,76 @@
       #table-note {
         margin: 0.5rem 0 0;
       }
+
+      footer {
+        margin-top: 2rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid currentColor;
+        font-size: 0.95rem;
+        opacity: 0.9;
+      }
+
+      .disclaimer {
+        font-weight: 700;
+      }
     </style>
   </head>
-  <body>
-    <h1>Datasets from <code>v1/sady</code></h1>
-    <p id="status">Loading…</p>
-    <ul id="datasets"></ul>
-    <section id="dataset-output" hidden>
-      <h2 id="dataset-title"></h2>
-      <p id="dataset-meta"></p>
-      <p id="dataset-howto"></p>
-      <ul id="dataset-dimensions"></ul>
-      <section id="table-controls" hidden>
-        <div class="control-row">
-          <label for="row-dimension">Rows:</label>
-          <select id="row-dimension"></select>
-          <label for="column-dimension">Columns:</label>
-          <select id="column-dimension"></select>
+  <body class="is-centered">
+    <div id="app-shell">
+      <main id="app">
+        <h1>Datové sady z <code>v1/sady</code></h1>
+        <p id="status">Načítám…</p>
+        <div id="dataset-search-row">
+          <label for="dataset-search">Najít datovou sadu (název nebo kód): </label>
+          <input
+            id="dataset-search"
+            type="search"
+            placeholder="Zkuste: hostů, rezidence, CRUHVD1..."
+            autocomplete="off"
+            disabled
+          />
+          <ul id="datasets" hidden></ul>
         </div>
-        <div id="dimension-filters"></div>
-      </section>
-      <div id="table-container"></div>
-      <p id="table-note"></p>
-    </section>
+        <section id="dataset-output" hidden>
+          <h2 id="dataset-title"></h2>
+          <section id="table-controls" hidden>
+            <div class="control-row">
+              <label for="view-select">Sestava:</label>
+              <select id="view-select"></select>
+            </div>
+            <div class="control-row">
+              <label for="row-dimension">Řádky:</label>
+              <select id="row-dimension"></select>
+              <label for="column-dimension">Sloupce:</label>
+              <select id="column-dimension"></select>
+            </div>
+            <div id="dimension-filters"></div>
+          </section>
+          <div id="table-container"></div>
+          <p id="table-note"></p>
+        </section>
+        <footer>
+          <p>
+            Zdroj dat: <a href="https://data.csu.gov.cz" target="_blank" rel="noopener noreferrer">DataStat (ČSÚ)</a>.
+          </p>
+          <p class="disclaimer">
+            Neoficiální ukázková aplikace. Bez afiliace, partnerství nebo schválení ze strany ČSÚ.
+          </p>
+        </footer>
+      </main>
+    </div>
 
     <script>
       const KATALOG_ENDPOINT = "https://data.csu.gov.cz/api/katalog/v1/sady";
       const DOTAZ_BASE = "https://data.csu.gov.cz/api/dotaz/v1";
+      const MAX_SEARCH_RESULTS = 40;
       const statusEl = document.getElementById("status");
+      const searchEl = document.getElementById("dataset-search");
       const listEl = document.getElementById("datasets");
       const outputEl = document.getElementById("dataset-output");
       const datasetTitleEl = document.getElementById("dataset-title");
-      const datasetMetaEl = document.getElementById("dataset-meta");
-      const datasetHowToEl = document.getElementById("dataset-howto");
-      const datasetDimensionsEl = document.getElementById("dataset-dimensions");
       const tableControlsEl = document.getElementById("table-controls");
+      const viewSelectEl = document.getElementById("view-select");
       const rowDimensionEl = document.getElementById("row-dimension");
       const columnDimensionEl = document.getElementById("column-dimension");
       const dimensionFiltersEl = document.getElementById("dimension-filters");
@@ -136,19 +246,25 @@
       const tableNoteEl = document.getElementById("table-note");
       const MAX_TABLE_CELLS = 5000;
       let currentDataset = null;
+      let allDatasets = [];
+      let indexedDatasets = [];
+      let filteredDatasetMatches = [];
+      let activeDatasetMatchIndex = -1;
+      let currentDatasetInfo = null;
+      let currentDatasetViews = [];
+      let currentDatasetDetail = null;
+      let currentBaseJsonStat = null;
+
+      function setLayoutForSelection(hasSelection) {
+        document.body.classList.toggle("has-selection", hasSelection);
+        document.body.classList.toggle("is-centered", !hasSelection);
+      }
 
       function getCommonHeaders() {
         return {
           Accept: "application/json",
           "Accept-Language": "cs"
         };
-      }
-
-      function escapeHtml(value) {
-        return String(value)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;");
       }
 
       function product(values) {
@@ -209,6 +325,229 @@
         return name ? name + " (" + dimId + ")" : dimId;
       }
 
+      function getViewCode(view) {
+        return view?.kod || view?.vyberKod || view?.id || "";
+      }
+
+      function getViewVersion(view) {
+        return view?.verze || view?.vyberVerze || "";
+      }
+
+      function getViewLabel(view) {
+        const code = getViewCode(view);
+        const name = view?.nazev || code || "(nepojmenovaný výběr)";
+        return name + (code ? " (" + code + ")" : "");
+      }
+
+      function populateViewSelect(views, selectedValue) {
+        const options = [{ value: "__DATASET__", label: "Celá sada" }];
+        for (const view of views) {
+          const code = getViewCode(view);
+          if (!code) continue;
+          options.push({
+            value: code,
+            label: getViewLabel(view)
+          });
+        }
+        createSelectOptions(viewSelectEl, options);
+        viewSelectEl.value = selectedValue || "__DATASET__";
+      }
+
+      function getDimensionNameMapFrom(detail, dimensions, dimensionIds) {
+        const variantMap = Array.isArray(detail?.variantyDimenze) ? detail.variantyDimenze : [];
+        const variantNameByCode = Object.fromEntries(
+          variantMap
+            .filter((variant) => variant?.kod)
+            .map((variant) => [variant.kod, variant.nazev || ""])
+        );
+        const map = {};
+        for (const dimId of dimensionIds) {
+          const jsonStatLabel = dimensions?.[dimId]?.label || "";
+          map[dimId] = variantNameByCode[dimId] || jsonStatLabel || "";
+        }
+        return map;
+      }
+
+      function normalizeText(value) {
+        return String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+      }
+
+      function fuzzyTokenScore(token, target) {
+        if (!token || !target) return -1;
+        const directIndex = target.indexOf(token);
+        if (directIndex >= 0) {
+          return 2000 - directIndex * 2 - Math.max(0, target.length - token.length);
+        }
+
+        let ti = 0;
+        let first = -1;
+        let last = -1;
+        for (let i = 0; i < target.length && ti < token.length; i++) {
+          if (target[i] === token[ti]) {
+            if (first === -1) first = i;
+            last = i;
+            ti++;
+          }
+        }
+        if (ti !== token.length) return -1;
+
+        const span = last - first + 1;
+        const compactnessPenalty = Math.max(0, span - token.length);
+        return 900 - first * 2 - compactnessPenalty;
+      }
+
+      function scoreDataset(query, indexedItem) {
+        const normalizedQuery = normalizeText(query);
+        if (!normalizedQuery) return 0;
+        const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+        if (tokens.length === 0) return 0;
+
+        let score = 0;
+        for (const token of tokens) {
+          const codeScore = fuzzyTokenScore(token, indexedItem.normCode);
+          const nameScore = fuzzyTokenScore(token, indexedItem.normName);
+          const combinedScore = fuzzyTokenScore(token, indexedItem.normCombined);
+          const best = Math.max(codeScore, nameScore, combinedScore);
+          if (best < 0) return -1;
+          score += best;
+        }
+
+        if (indexedItem.normCode === normalizedQuery) score += 2000;
+        else if (indexedItem.normCode.startsWith(normalizedQuery)) score += 600;
+        return score;
+      }
+
+      function hideDatasetDropdown() {
+        listEl.hidden = true;
+        filteredDatasetMatches = [];
+        activeDatasetMatchIndex = -1;
+      }
+
+      function positionDatasetDropdown() {
+        if (listEl.hidden) return;
+        const rect = searchEl.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const margin = 8;
+        const gap = 4;
+        const maxHeight = Math.min(320, Math.floor(viewportHeight * 0.45));
+        const spaceBelow = viewportHeight - rect.bottom - margin;
+        const spaceAbove = rect.top - margin;
+
+        listEl.style.maxHeight = Math.max(120, maxHeight) + "px";
+        listEl.style.left = Math.max(margin, Math.round(rect.left)) + "px";
+        listEl.style.width = Math.round(rect.width) + "px";
+
+        if (spaceBelow >= 170 || spaceBelow >= spaceAbove) {
+          listEl.style.top = Math.round(rect.bottom + gap) + "px";
+        } else {
+          const desiredHeight = Math.min(listEl.scrollHeight || maxHeight, maxHeight);
+          const top = Math.max(margin, Math.round(rect.top - desiredHeight - gap));
+          listEl.style.top = top + "px";
+        }
+      }
+
+      function setActiveDatasetMatch(index) {
+        if (!filteredDatasetMatches.length) {
+          activeDatasetMatchIndex = -1;
+          return;
+        }
+
+        const normalized =
+          ((index % filteredDatasetMatches.length) + filteredDatasetMatches.length) %
+          filteredDatasetMatches.length;
+        activeDatasetMatchIndex = normalized;
+
+        const buttons = listEl.querySelectorAll("button.dataset-btn");
+        buttons.forEach((button, i) => {
+          const isActive = i === activeDatasetMatchIndex;
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-selected", isActive ? "true" : "false");
+          if (isActive) {
+            button.scrollIntoView({ block: "nearest" });
+          }
+        });
+      }
+
+      function selectActiveDatasetMatch() {
+        if (
+          activeDatasetMatchIndex < 0 ||
+          activeDatasetMatchIndex >= filteredDatasetMatches.length
+        ) {
+          return;
+        }
+        const match = filteredDatasetMatches[activeDatasetMatchIndex];
+        hideDatasetDropdown();
+        loadDatasetData(match.item);
+      }
+
+      function renderDatasetMatches(query) {
+        listEl.innerHTML = "";
+        const normalizedQuery = normalizeText(query);
+        if (!normalizedQuery) {
+          hideDatasetDropdown();
+          return;
+        }
+
+        const ranked = indexedDatasets
+          .map((entry) => ({
+            entry,
+            score: scoreDataset(normalizedQuery, entry)
+          }))
+          .filter((result) => (normalizedQuery ? result.score >= 0 : true))
+          .sort((a, b) => {
+            if (normalizedQuery && b.score !== a.score) return b.score - a.score;
+            return a.entry.displayLabel.localeCompare(b.entry.displayLabel, "cs");
+          })
+          .slice(0, MAX_SEARCH_RESULTS);
+
+        filteredDatasetMatches = ranked.map((result) => result.entry);
+
+        for (let i = 0; i < ranked.length; i++) {
+          const result = ranked[i];
+          const item = result.entry.item;
+          const li = document.createElement("li");
+          const button = document.createElement("button");
+          button.className = "dataset-btn";
+          button.type = "button";
+          const title = document.createElement("span");
+          title.className = "dataset-btn-title";
+          title.textContent = result.entry.name || result.entry.code || "(nepojmenovaná datová sada)";
+          const meta = document.createElement("span");
+          meta.className = "dataset-btn-meta";
+          meta.textContent =
+            (result.entry.code || "?") + (result.entry.version ? " | verze " + result.entry.version : "");
+          button.appendChild(title);
+          button.appendChild(meta);
+          button.addEventListener("mouseenter", () => {
+            setActiveDatasetMatch(i);
+          });
+          button.addEventListener("click", () => {
+            hideDatasetDropdown();
+            loadDatasetData(item);
+          });
+          li.appendChild(button);
+          listEl.appendChild(li);
+        }
+
+        if (ranked.length === 0) {
+          filteredDatasetMatches = [];
+          activeDatasetMatchIndex = -1;
+          const li = document.createElement("li");
+          li.textContent = "Nenalezeny žádné odpovídající datové sady.";
+          listEl.appendChild(li);
+        } else {
+          setActiveDatasetMatch(0);
+        }
+
+        listEl.hidden = false;
+        positionDatasetDropdown();
+      }
+
+
       function renderTable() {
         if (!currentDataset) return;
 
@@ -234,9 +573,9 @@
         if (cellCount > MAX_TABLE_CELLS) {
           tableContainerEl.innerHTML = "";
           tableNoteEl.textContent =
-            "Table too large (" +
+            "Tabulka je příliš velká (" +
             cellCount +
-            " cells). Pick dimensions with fewer values or change filters.";
+            " buněk). Vyberte dimenze s menším počtem hodnot nebo upravte filtry.";
           return;
         }
 
@@ -297,7 +636,7 @@
             }
 
             if (!valid) {
-              td.textContent = "-";
+              td.textContent = "—";
             } else {
               let flatIndex = 0;
               for (let i = 0; i < indices.length; i++) {
@@ -317,12 +656,7 @@
         table.appendChild(tbody);
         tableContainerEl.innerHTML = "";
         tableContainerEl.appendChild(table);
-        tableNoteEl.textContent =
-          "Live view: " +
-          rowCodes.length +
-          " x " +
-          colCodes.length +
-          " values.";
+        tableNoteEl.textContent = "";
       }
 
       function syncFiltersWithAxes() {
@@ -342,6 +676,29 @@
             const firstCode = currentDataset.dimensionCodes[dimId]?.[0] || "";
             selectEl.value = firstCode;
           }
+        }
+      }
+
+      function syncAxisSelectAvailability() {
+        const rowValue = rowDimensionEl.value;
+        const colValue = columnDimensionEl.value;
+
+        for (const option of columnDimensionEl.options) {
+          option.disabled = option.value !== "__NONE__" && option.value === rowValue;
+        }
+        if (
+          columnDimensionEl.selectedOptions[0] &&
+          columnDimensionEl.selectedOptions[0].disabled
+        ) {
+          columnDimensionEl.value = "__NONE__";
+        }
+
+        for (const option of rowDimensionEl.options) {
+          option.disabled = option.value === colValue;
+        }
+        if (rowDimensionEl.selectedOptions[0] && rowDimensionEl.selectedOptions[0].disabled) {
+          const fallback = Array.from(rowDimensionEl.options).find((option) => !option.disabled);
+          if (fallback) rowDimensionEl.value = fallback.value;
         }
       }
 
@@ -383,7 +740,7 @@
         }));
         createSelectOptions(rowDimensionEl, rowOptions);
 
-        const colOptions = [{ value: "__NONE__", label: "(none)" }].concat(
+        const colOptions = [{ value: "__NONE__", label: "(žádný sloupec)" }].concat(
           dimensionIds.map((dimId) => ({
             value: dimId,
             label: getDimensionDisplayName(dimId, dimensionNames)
@@ -393,6 +750,7 @@
 
         rowDimensionEl.value = dimensionIds[0] || "";
         columnDimensionEl.value = dimensionIds[1] || "__NONE__";
+        syncAxisSelectAvailability();
 
         dimensionFiltersEl.innerHTML = "";
         for (const dimId of dimensionIds) {
@@ -407,7 +765,7 @@
           select.id = "filter-" + dimId;
           const labels = getDimensionLabels(dimensions[dimId]);
           const codes = dimensionCodes[dimId] || [];
-          const options = [{ value: "__ALL__", label: "(all)" }].concat(
+          const options = [{ value: "__ALL__", label: "(vše)" }].concat(
             codes.map((code) => ({
               value: code,
               label: buildDisplayLabel(code, labels)
@@ -425,17 +783,13 @@
         }
 
         rowDimensionEl.onchange = () => {
-          if (rowDimensionEl.value === columnDimensionEl.value) {
-            columnDimensionEl.value = "__NONE__";
-          }
+          syncAxisSelectAvailability();
           syncFiltersWithAxes();
           renderTable();
         };
 
         columnDimensionEl.onchange = () => {
-          if (rowDimensionEl.value === columnDimensionEl.value) {
-            columnDimensionEl.value = "__NONE__";
-          }
+          syncAxisSelectAvailability();
           syncFiltersWithAxes();
           renderTable();
         };
@@ -445,6 +799,53 @@
         renderTable();
       }
 
+      function applySourceData(jsonStat) {
+        const dimensionIds = Array.isArray(jsonStat?.id)
+          ? jsonStat.id
+          : Object.keys(jsonStat?.dimension || {});
+        const dimensions = jsonStat?.dimension || {};
+        const dimensionNames = getDimensionNameMapFrom(currentDatasetDetail, dimensions, dimensionIds);
+        setupTableUi(jsonStat, dimensionNames);
+      }
+
+      async function loadSelectedSource() {
+        if (!currentDatasetInfo) return;
+        const selectedCode = viewSelectEl.value;
+
+        try {
+          if (selectedCode === "__DATASET__") {
+            applySourceData(currentBaseJsonStat);
+            return;
+          }
+
+          const selectedView = currentDatasetViews.find((view) => getViewCode(view) === selectedCode);
+          if (!selectedView) return;
+
+          statusEl.textContent = "Načítám výběr " + selectedCode + "...";
+          const viewUrl = new URL(DOTAZ_BASE + "/data/vybery/" + encodeURIComponent(selectedCode));
+          const viewVersion = getViewVersion(selectedView);
+          if (viewVersion) viewUrl.searchParams.set("verze", viewVersion);
+          if (currentDatasetInfo.verze) viewUrl.searchParams.set("verzeSady", currentDatasetInfo.verze);
+          viewUrl.searchParams.set("format", "JSON_STAT");
+          viewUrl.searchParams.set("rozsah", "CELY_VYBER");
+          viewUrl.searchParams.set("poznamky", "false");
+
+          const response = await fetch(viewUrl.toString(), {
+            mode: "cors",
+            headers: getCommonHeaders()
+          });
+          if (!response.ok) throw new Error("View HTTP " + response.status);
+
+          const jsonStat = await response.json();
+          applySourceData(jsonStat);
+          statusEl.textContent = "Načteno " + allDatasets.length + " datových sad.";
+        } catch (error) {
+          statusEl.textContent =
+            "Nepodařilo se načíst výběr. " +
+            (error instanceof Error ? error.message : String(error));
+        }
+      }
+
       async function loadDatasetData(dataset) {
         const code = dataset?.kod;
         const version = dataset?.verze;
@@ -452,15 +853,15 @@
 
         if (!code || !version) return;
 
-        outputEl.hidden = false;
-        datasetTitleEl.textContent = "Loading: " + name;
-        datasetMetaEl.textContent = "";
-        datasetHowToEl.textContent = "";
-        datasetDimensionsEl.innerHTML = "";
+        statusEl.textContent = "Načítám sadu " + code + "...";
         tableControlsEl.hidden = true;
         tableContainerEl.innerHTML = "";
         tableNoteEl.textContent = "";
         currentDataset = null;
+        currentDatasetInfo = { kod: code, verze: version, nazev: name };
+        currentDatasetViews = [];
+        currentDatasetDetail = null;
+        currentBaseJsonStat = null;
 
         try {
           const dataUrl = new URL(DOTAZ_BASE + "/data/sady/" + encodeURIComponent(code));
@@ -471,8 +872,11 @@
 
           const detailUrl = new URL(KATALOG_ENDPOINT + "/" + encodeURIComponent(code));
           detailUrl.searchParams.set("verze", version);
+          const viewsUrl = new URL(
+            KATALOG_ENDPOINT + "/" + encodeURIComponent(code) + "/vybery"
+          );
 
-          const [dataResponse, detailResponse] = await Promise.all([
+          const [dataResponse, detailResponse, viewsResponse] = await Promise.all([
             fetch(dataUrl.toString(), {
               mode: "cors",
               headers: getCommonHeaders()
@@ -480,113 +884,44 @@
             fetch(detailUrl.toString(), {
               mode: "cors",
               headers: getCommonHeaders()
+            }),
+            fetch(viewsUrl.toString(), {
+              mode: "cors",
+              headers: getCommonHeaders()
             })
           ]);
 
           if (!dataResponse.ok) throw new Error("Data HTTP " + dataResponse.status);
           if (!detailResponse.ok) throw new Error("Detail HTTP " + detailResponse.status);
+          if (!viewsResponse.ok) throw new Error("Views HTTP " + viewsResponse.status);
 
-          const [jsonStat, detail] = await Promise.all([
+          const [jsonStat, detail, views] = await Promise.all([
             dataResponse.json(),
-            detailResponse.json()
+            detailResponse.json(),
+            viewsResponse.json()
           ]);
-          const dimensionIds = Array.isArray(jsonStat?.id)
-            ? jsonStat.id
-            : Object.keys(jsonStat?.dimension || {});
-          const dimensions = jsonStat?.dimension || {};
-          const observationCount = product(jsonStat?.size);
-          const indicatorCodes = Array.isArray(detail?.ukazatele)
-            ? detail.ukazatele.map((u) => u?.kod).filter(Boolean)
-            : [];
-          const requiredDimTypes = Array.isArray(detail?.pravidlaVyberu?.povinneDimenze)
-            ? detail.pravidlaVyberu.povinneDimenze
-            : [];
-          const variantMap = Array.isArray(detail?.variantyDimenze) ? detail.variantyDimenze : [];
-          const dimensionNames = {};
-          const variantNameByCode = Object.fromEntries(
-            variantMap
-              .filter((variant) => variant?.kod)
-              .map((variant) => [variant.kod, variant.nazev || ""])
-          );
-
-          for (const dimId of dimensionIds) {
-            const jsonStatLabel = dimensions?.[dimId]?.label || "";
-            dimensionNames[dimId] = variantNameByCode[dimId] || jsonStatLabel || "";
-          }
+          currentDatasetDetail = detail;
+          currentBaseJsonStat = jsonStat;
+          currentDatasetViews = Array.isArray(views) ? views : [];
 
           datasetTitleEl.textContent = name + " (" + code + ")";
-          datasetMetaEl.textContent =
-            "Observations: " +
-            observationCount +
-            ". Dimensions: " +
-            dimensionIds.length +
-            ".";
-          datasetHowToEl.textContent =
-            "For 1 value use /data/sady/{sadaKod}/hodnoty/{ukazatelKod} with kodyDimenzi + kodyPolozek. " +
-            "Pick ukazatelKod from this dataset, then pick dimension item codes from /katalog/v1/dimenze/{kod}/polozky.";
-
-          for (const dimId of dimensionIds) {
-            const dim = dimensions[dimId];
-            const itemCodes = getDimensionItemCodes(dim);
-            const sample = itemCodes.slice(0, 8);
-            const sampleText = sample.length > 0 ? sample.join(", ") : "n/a";
-            const hasMore = itemCodes.length > sample.length ? ", ..." : "";
-
-            const li = document.createElement("li");
-            li.innerHTML =
-              "<strong>" +
-              escapeHtml(dimId) +
-              "</strong>: " +
-              itemCodes.length +
-              " values (sample: " +
-              escapeHtml(sampleText + hasMore) +
-              ")";
-            datasetDimensionsEl.appendChild(li);
-          }
-
-          if (indicatorCodes.length > 0) {
-            const li = document.createElement("li");
-            li.innerHTML =
-              "<strong>Ukazatele (kody)</strong>: " +
-              escapeHtml(indicatorCodes.slice(0, 10).join(", ")) +
-              (indicatorCodes.length > 10 ? ", ..." : "");
-            datasetDimensionsEl.appendChild(li);
-          }
-
-          if (requiredDimTypes.length > 0) {
-            const li = document.createElement("li");
-            li.innerHTML =
-              "<strong>Povinne typy dimenzi</strong>: " +
-              escapeHtml(requiredDimTypes.join(", "));
-            datasetDimensionsEl.appendChild(li);
-          }
-
-          if (variantMap.length > 0) {
-            const li = document.createElement("li");
-            li.innerHTML =
-              "<strong>Varianty dimenzi (kod - typ)</strong>: " +
-              escapeHtml(
-                variantMap
-                  .slice(0, 12)
-                  .map((variant) => (variant?.kod || "?") + " - " + (variant?.typDimenzeKod || "?"))
-                  .join(", ")
-              ) +
-              (variantMap.length > 12 ? ", ..." : "");
-            datasetDimensionsEl.appendChild(li);
-          }
-
-          setupTableUi(jsonStat, dimensionNames);
+          populateViewSelect(currentDatasetViews, "__DATASET__");
+          applySourceData(currentBaseJsonStat);
+          setLayoutForSelection(true);
+          outputEl.hidden = false;
+          statusEl.textContent = "Načteno " + allDatasets.length + " datových sad.";
         } catch (error) {
-          datasetTitleEl.textContent = name + " (" + code + ")";
-          datasetMetaEl.textContent =
-            "Failed to load dataset data. " +
-            (error instanceof Error ? error.message : String(error));
-          datasetHowToEl.textContent = "";
-          datasetDimensionsEl.innerHTML = "";
+          outputEl.hidden = true;
           tableControlsEl.hidden = true;
           tableContainerEl.innerHTML = "";
           tableNoteEl.textContent = "";
           currentDataset = null;
+          setLayoutForSelection(false);
+          statusEl.textContent =
+            "Nepodařilo se načíst sadu " +
+            code +
+            ". " +
+            (error instanceof Error ? error.message : String(error));
         }
       }
 
@@ -603,30 +938,104 @@
 
           const data = await response.json();
           const items = Array.isArray(data) ? data : [];
+          allDatasets = items;
+          indexedDatasets = allDatasets.map((item) => {
+            const label = item?.nazev || item?.kod || "(nepojmenovaná datová sada)";
+            const suffix = item?.kod ? " (" + item.kod + ", v" + (item.verze || "?") + ")" : "";
+            return {
+              item,
+              displayLabel: label + suffix,
+              code: item?.kod || "",
+              version: item?.verze || "",
+              name: item?.nazev || "",
+              normCode: normalizeText(item?.kod || ""),
+              normName: normalizeText(item?.nazev || ""),
+              normCombined: normalizeText((item?.kod || "") + " " + (item?.nazev || ""))
+            };
+          });
 
-          statusEl.textContent = "Loaded " + items.length + " datasets.";
-          listEl.innerHTML = "";
-
-          for (const item of items) {
-            const li = document.createElement("li");
-            const button = document.createElement("button");
-            button.className = "dataset-btn";
-            button.type = "button";
-            const label = item?.nazev || item?.kod || "(unnamed dataset)";
-            const id = item?.kod ? " (" + item.kod + ", v" + (item.verze || "?") + ")" : "";
-            button.textContent = label + id;
-            button.addEventListener("click", () => {
-              loadDatasetData(item);
-            });
-            li.appendChild(button);
-            listEl.appendChild(li);
-          }
+          statusEl.textContent =
+            "Načteno " +
+            items.length +
+            " datových sad. Pište pro fuzzy hledání (bez ohledu na diakritiku).";
+          searchEl.disabled = false;
+          searchEl.value = "";
+          hideDatasetDropdown();
+          setLayoutForSelection(false);
         } catch (error) {
           statusEl.textContent =
-            "Failed to load datasets. " +
+            "Nepodařilo se načíst datové sady. " +
             (error instanceof Error ? error.message : String(error));
+          searchEl.disabled = true;
+          hideDatasetDropdown();
+          setLayoutForSelection(false);
         }
       }
+
+      searchEl.addEventListener("input", () => {
+        renderDatasetMatches(searchEl.value);
+      });
+
+      searchEl.addEventListener("focus", () => {
+        if (searchEl.value.trim()) {
+          renderDatasetMatches(searchEl.value);
+        }
+      });
+
+      viewSelectEl.addEventListener("change", () => {
+        loadSelectedSource();
+      });
+
+      searchEl.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown") {
+          if (listEl.hidden && searchEl.value.trim()) {
+            renderDatasetMatches(searchEl.value);
+          }
+          if (!listEl.hidden && filteredDatasetMatches.length > 0) {
+            event.preventDefault();
+            setActiveDatasetMatch(activeDatasetMatchIndex + 1);
+          }
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          if (!listEl.hidden && filteredDatasetMatches.length > 0) {
+            event.preventDefault();
+            setActiveDatasetMatch(activeDatasetMatchIndex - 1);
+          }
+          return;
+        }
+
+        if (event.key === "Enter") {
+          if (!listEl.hidden && activeDatasetMatchIndex >= 0) {
+            event.preventDefault();
+            selectActiveDatasetMatch();
+          }
+          return;
+        }
+
+        if (event.key === "Escape") {
+          hideDatasetDropdown();
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest("#dataset-search-row")) {
+          hideDatasetDropdown();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        positionDatasetDropdown();
+      });
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          positionDatasetDropdown();
+        },
+        true
+      );
 
       loadDatasets();
     </script>
