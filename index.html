@@ -1110,11 +1110,26 @@
       return values.reduce((acc, value) => acc * Number(value || 0), 1);
     }
 
-    function getDimensionItemCodes(dimension) {
+    function getDimensionCodeInfo(dimension) {
       const index = dimension?.category?.index;
-      if (Array.isArray(index)) return index;
-      if (index && typeof index === "object") return Object.keys(index);
-      return [];
+      if (Array.isArray(index)) {
+        const codes = index.slice();
+        const positions = {};
+        codes.forEach((code, pos) => {
+          positions[code] = pos;
+        });
+        return { codes, positions };
+      }
+      if (index && typeof index === "object") {
+        const entries = Object.entries(index)
+          .map(([code, rawPos]) => [code, Number(rawPos)])
+          .filter(([, pos]) => Number.isFinite(pos))
+          .sort((a, b) => a[1] - b[1]);
+        const codes = entries.map(([code]) => code);
+        const positions = Object.fromEntries(entries);
+        return { codes, positions };
+      }
+      return { codes: [], positions: {} };
     }
 
     function getDimensionLabels(dimension) {
@@ -1647,12 +1662,9 @@
 
       for (const dimId of dimensionIds) {
         const dim = dimensions[dimId];
-        const codes = getDimensionItemCodes(dim);
-        dimensionCodes[dimId] = codes;
-        codeToPosition[dimId] = {};
-        codes.forEach((code, index) => {
-          codeToPosition[dimId][code] = index;
-        });
+        const codeInfo = getDimensionCodeInfo(dim);
+        dimensionCodes[dimId] = codeInfo.codes;
+        codeToPosition[dimId] = codeInfo.positions;
       }
 
       currentDataset = {
