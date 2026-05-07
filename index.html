@@ -882,27 +882,16 @@
                 const datasetIndex = legendItem.datasetIndex;
                 if (typeof datasetIndex !== "number") return;
                 const nativeEvent = event?.native || event;
-                const isolateOnlyOne = !!(nativeEvent?.metaKey || nativeEvent?.ctrlKey);
-                if (isolateOnlyOne) {
-                  const visibleIndexes = chart.data.datasets
-                    .map((_, idx) => idx)
-                    .filter((idx) => chart.isDatasetVisible(idx));
-                  const alreadyOnlyThisOne =
-                    visibleIndexes.length === 1 && visibleIndexes[0] === datasetIndex;
-                  if (alreadyOnlyThisOne) {
-                    for (let idx = 0; idx < chart.data.datasets.length; idx++) {
-                      chart.setDatasetVisibility(idx, true);
-                    }
-                  } else {
-                    for (let idx = 0; idx < chart.data.datasets.length; idx++) {
-                      chart.setDatasetVisibility(idx, idx === datasetIndex);
-                    }
-                  }
-                } else {
+                const additiveSelection = !!nativeEvent?.shiftKey;
+                if (additiveSelection) {
                   chart.setDatasetVisibility(
                     datasetIndex,
                     !chart.isDatasetVisible(datasetIndex)
                   );
+                } else {
+                  for (let idx = 0; idx < chart.data.datasets.length; idx++) {
+                    chart.setDatasetVisibility(idx, idx === datasetIndex);
+                  }
                 }
                 chart.update();
               }
